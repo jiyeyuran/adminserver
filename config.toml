@@ -1,0 +1,8 @@
+port = 8004
+
+[api]
+url = ""
+token = ""
+
+[database]
+dsn = ""
