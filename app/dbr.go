@@ -6,6 +6,8 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/v2"
+	_ "github.com/lib/pq"
+	_ "github.com/mattn/go-sqlite3"
 	"github.com/pkg/errors"
 )
 
@@ -64,10 +66,6 @@ func NewDB(dbConfig DBConfig, debug bool) (session *dbr.Session) {
 	eventReceiver := NewDBEventReceiver(debug)
 	loc, err := loadLocation(dbConfig)
 	if err != nil {
-		panic(err)
-	}
-
-	if err := initDB(dbConfig, eventReceiver); err != nil {
 		panic(err)
 	}
 

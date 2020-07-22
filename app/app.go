@@ -74,12 +74,23 @@ func NewApp(configLocations ...string) *App {
 		log.Printf("config: %s", data)
 	}
 
+	if len(appConfig.DB.Driver) == 0 {
+		if parts := strings.SplitN(appConfig.DB.DSN, "://", 2); len(parts) == 2 {
+			appConfig.DB.Driver = parts[0]
+		}
+	}
+
 	time.Local = time.UTC
+	debug := gin.Mode() == gin.DebugMode
+
+	if err := initDB(appConfig.DB, NewDBEventReceiver(debug)); err != nil {
+		panic(err)
+	}
 
 	return &App{
 		config:   appConfig,
 		redisCli: newRedis(appConfig.Redis),
-		db:       NewDB(appConfig.DB, gin.Mode() == gin.DebugMode),
+		db:       NewDB(appConfig.DB, debug),
 	}
 }
 
