@@ -4,5 +4,7 @@ port = 8004
 url = ""
 token = ""
 
-[database]
+[db]
+driver = "mysql"
 dsn = ""
+timezone = ""

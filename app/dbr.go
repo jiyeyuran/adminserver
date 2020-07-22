@@ -6,9 +6,79 @@ import (
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/v2"
-	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/pkg/errors"
 )
+
+type localDialect struct {
+	dbr.Dialect
+	loc *time.Location
+}
+
+func newLocalDialect(parentDialect dbr.Dialect, loc *time.Location) dbr.Dialect {
+	return &localDialect{
+		Dialect: parentDialect,
+		loc:     loc,
+	}
+}
+
+func (d localDialect) EncodeTime(t time.Time) string {
+	return `'` + t.In(d.loc).Format("2006-01-02 15:04:05") + `'`
+}
+
+func loadLocation(dbConfig DBConfig) (loc *time.Location, err error) {
+	loc = time.Local
+
+	if len(dbConfig.Timezone) > 0 {
+		loc, err = time.LoadLocation(dbConfig.Timezone)
+	}
+
+	return
+}
+
+func initDB(dbConfig DBConfig, eventReceiver dbr.EventReceiver) (err error) {
+	switch dbConfig.Driver {
+	case "mysql", "postgres":
+		cfg, err := mysql.ParseDSN(dbConfig.DSN)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+
+		dbName := cfg.DBName
+		cfg.DBName = ""
+
+		conn, err := dbr.Open(dbConfig.Driver, cfg.FormatDSN(), eventReceiver)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		defer conn.Close()
+
+		_, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + conn.QuoteIdent(dbName))
+		if err != nil {
+			return errors.WithStack(err)
+		}
+	}
+	return
+}
+
+func NewDB(dbConfig DBConfig, debug bool) (session *dbr.Session) {
+	eventReceiver := NewDBEventReceiver(debug)
+	loc, err := loadLocation(dbConfig)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := initDB(dbConfig, eventReceiver); err != nil {
+		panic(err)
+	}
+
+	conn, err := dbr.Open(dbConfig.Driver, dbConfig.DSN, eventReceiver)
+	if err != nil {
+		panic(err)
+	}
+	conn.Dialect = newLocalDialect(conn.Dialect, loc)
+
+	return conn.NewSession(nil)
+}
 
 type DBEventReceiver struct {
 	dbr.NullEventReceiver
@@ -59,82 +129,4 @@ func (n *DBEventReceiver) TimingKv(eventName string, nanoseconds int64, kvs map[
 	if n.debug {
 		log.Printf("event: %s, timing: %s, sql: %v", eventName, time.Duration(nanoseconds), kvs["sql"])
 	}
-}
-
-type localDialect struct {
-	dbr.Dialect
-	loc *time.Location
-}
-
-func newLocalDialect(parentDialect dbr.Dialect, loc *time.Location) dbr.Dialect {
-	return &localDialect{
-		Dialect: parentDialect,
-		loc:     loc,
-	}
-}
-
-func (d localDialect) EncodeTime(t time.Time) string {
-	return `'` + t.In(d.loc).Format("2006-01-02 15:04:05") + `'`
-}
-
-func parseLocation(dbConfig DBConfig) (loc *time.Location, err error) {
-	loc = time.Local
-
-	switch dbConfig.Driver {
-	case "mysql":
-		cfg, err := mysql.ParseDSN(dbConfig.DSN)
-		if err != nil {
-			return nil, errors.WithStack(err)
-		}
-		if cfg.Loc != nil {
-			loc = cfg.Loc
-		}
-	}
-
-	return
-}
-
-func initDB(dbConfig DBConfig, eventReceiver dbr.EventReceiver) (err error) {
-	switch dbConfig.Driver {
-	case "mysql":
-		cfg, err := mysql.ParseDSN(dbConfig.DSN)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-
-		dbName := cfg.DBName
-		cfg.DBName = ""
-
-		conn, err := dbr.Open(dbConfig.Driver, cfg.FormatDSN(), eventReceiver)
-		if err != nil {
-			return errors.WithStack(err)
-		}
-		defer conn.Close()
-
-		_, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + dialect.MySQL.QuoteIdent(dbName))
-		if err != nil {
-			return errors.WithStack(err)
-		}
-	}
-	return
-}
-
-func NewDB(dbConfig DBConfig, debug bool) (session *dbr.Session) {
-	eventReceiver := NewDBEventReceiver(debug)
-	loc, err := parseLocation(dbConfig)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := initDB(dbConfig, eventReceiver); err != nil {
-		panic(err)
-	}
-
-	conn, err := dbr.Open(dbConfig.Driver, dbConfig.DSN, eventReceiver)
-	if err != nil {
-		panic(err)
-	}
-	conn.Dialect = newLocalDialect(conn.Dialect, loc)
-
-	return conn.NewSession(nil)
 }

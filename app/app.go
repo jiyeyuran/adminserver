@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
@@ -30,8 +31,9 @@ type APIConfig struct {
 }
 
 type DBConfig struct {
-	Driver string `json:"driver,omitempty"`
-	DSN    string `json:"dsn,omitempty"`
+	Driver   string `json:"driver,omitempty"`
+	DSN      string `json:"dsn,omitempty"`
+	Timezone string `json:"timezone,omitempty"`
 }
 
 type RedisConfig struct {
@@ -71,6 +73,8 @@ func NewApp(configLocations ...string) *App {
 
 		log.Printf("config: %s", data)
 	}
+
+	time.Local = time.UTC
 
 	return &App{
 		config:   appConfig,
