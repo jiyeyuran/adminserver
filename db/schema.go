@@ -5,11 +5,24 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr/v2"
+	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/pkg/errors"
 )
+
+type indexInfo struct {
+	Name    string
+	Type    string
+	Columns []string
+}
+
+type tagPair struct {
+	Key string
+	Val string
+}
 
 // CreateDatabase 如果数据库不存在，则创建
 func CreateDatabase(dbConfig Config) (err error) {
@@ -24,22 +37,32 @@ func CreateDatabase(dbConfig Config) (err error) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Exec("CREATE DATABASE IF NOT EXISTS " + conn.QuoteIdent(dbName))
-	if err != nil {
-		return errors.WithStack(err)
+	sqlstr := "CREATE DATABASE IF NOT EXISTS " + conn.QuoteIdent(dbName)
+
+	if dbConfig.Driver == "mysql" {
+		sqlstr += " DEFAULT CHARSET utf8mb4 COLLATE utf8_general_ci"
 	}
 
-	return
+	_, err = conn.Exec(sqlstr)
+	return errors.WithStack(err)
 }
 
 // CreateDatabase 如果表不存在，则创建
 func CreateTable(session *dbr.Session, table string, schema interface{}) (err error) {
+	baseDialect := getBaseDialect(session)
 	rows, err := session.Select("*").From(table).Where("1 != 1").Rows()
 	if err != nil {
-		createSQL := schema2CreateTableSQL(session, table, schema)
+		createSQL := schema2CreateTableSQL(baseDialect, table, schema)
 		_, err = session.InsertBySql(createSQL).Exec()
-
-		return errors.WithStack(err)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		for _, indexSQL := range listTableIndexSQL(baseDialect, table, schema) {
+			if _, err = session.InsertBySql(indexSQL).Exec(); err != nil {
+				return errors.WithStack(err)
+			}
+		}
+		return
 	}
 	defer rows.Close()
 
@@ -48,9 +71,8 @@ func CreateTable(session *dbr.Session, table string, schema interface{}) (err er
 		return errors.WithStack(err)
 	}
 	colTypes, _ := rows.ColumnTypes()
-
 	quotedTable := session.QuoteIdent(table)
-	tp := reflect.TypeOf(reflect.Indirect(reflect.ValueOf(schema)))
+	tp := reflect.Indirect(reflect.ValueOf(schema)).Type()
 
 	for i := 0; i < tp.NumField(); i++ {
 		field := tp.Field(i)
@@ -61,7 +83,7 @@ func CreateTable(session *dbr.Session, table string, schema interface{}) (err er
 		}
 
 		if index := findIndex(columns, columnName); index < 0 {
-			sqlstr := fmt.Sprintf("ALTER TABLE %s ADD %s", quotedTable, field2SQL(session, field))
+			sqlstr := fmt.Sprintf("ALTER TABLE %s ADD %s", quotedTable, field2SQL(baseDialect, field))
 			if _, err = session.InsertBySql(sqlstr).Exec(); err != nil {
 				return errors.WithStack(err)
 			}
@@ -70,10 +92,11 @@ func CreateTable(session *dbr.Session, table string, schema interface{}) (err er
 			fieldKind := fieldKind(field)
 
 			if kindType(scanKind) != kindType(fieldKind) {
-				sqlstr := fmt.Sprintf("ALTER TABLE %s MODIFY %s", quotedTable, field2SQL(session, field))
-				if _, err = session.InsertBySql(sqlstr).Exec(); err != nil {
-					return errors.WithStack(err)
-				}
+				// TODO: 暂时不开启修改字段
+				// sqlstr := fmt.Sprintf("ALTER TABLE %s MODIFY %s", quotedTable, field2SQL(baseDialect, field))
+				// if _, err = tx.InsertBySql(sqlstr).Exec(); err != nil {
+				// 	return errors.WithStack(err)
+				// }
 			}
 		}
 	}
@@ -85,7 +108,7 @@ func schema2CreateTableSQL(d dbr.Dialect, table string, schema interface{}) stri
 	sqlstr := "CREATE TABLE IF NOT EXISTS " + d.QuoteIdent(table)
 	sqlstr += "(\n"
 
-	tp := reflect.TypeOf(reflect.Indirect(reflect.ValueOf(schema)))
+	tp := reflect.Indirect(reflect.ValueOf(schema)).Type()
 	columns := []string{}
 
 	for i := 0; i < tp.NumField(); i++ {
@@ -111,10 +134,22 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	buf.WriteString(d.QuoteIdent(columnName))
 	buf.WriteString(" ")
 
-	defaultLen := ""
+	if strings.ToLower(field.Name) == "id" && kindType(kind) == kindType_Number {
+		switch d {
+		case dialect.MySQL, dialect.PostgreSQL:
+			buf.WriteString("SERIAL PRIMARY KEY")
+		case dialect.SQLite3:
+			buf.WriteString("INTEGER PRIMARY KEY AUTOINCREMENT")
+		}
+		return buf.String()
+	}
 
-	if typ := tag.Get("type"); len(typ) > 0 {
-		buf.WriteString(typ)
+	sqlTag := tag.Get("sql")
+	pairs := parseTag2Map(sqlTag)
+	defaultLen, defaultVal := "", ""
+
+	if typ := pairs["type"]; len(typ) > 0 {
+		buf.WriteString(strings.ToUpper(typ))
 	} else {
 		switch kindType(kind) {
 		case kindType_Number:
@@ -123,16 +158,29 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 				defaultLen = "(20,2)"
 			} else {
 				buf.WriteString("INT")
+				defaultLen = "(11)"
 			}
+			defaultVal = "'0'"
 		case kindType_String:
 			buf.WriteString("VARCHAR")
-			defaultLen = "(255)"
+			defaultLen, defaultVal = "(255)", "''"
+		case kindType_Object:
+			switch fieldType(field) {
+			case reflect.TypeOf(dbr.NullTime{}), reflect.TypeOf(time.Time{}):
+				if d == dialect.PostgreSQL {
+					buf.WriteString("TIMESTAMP")
+				} else {
+					buf.WriteString("DATETIME")
+				}
+			default:
+				buf.WriteString("TEXT")
+			}
 		}
 	}
 
-	if length := tag.Get("length"); len(length) > 0 {
+	if length := pairs["length"]; len(length) > 0 {
 		buf.WriteString("(" + length + ")")
-	} else {
+	} else if len(defaultLen) > 0 {
 		buf.WriteString(defaultLen)
 	}
 
@@ -140,11 +188,53 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 
 	if field.Type.Kind() == reflect.Ptr {
 		buf.WriteString("NULL")
+		defaultVal = ""
 	} else {
 		buf.WriteString("NOT NULL")
 	}
 
+	if def, ok := pairs["default"]; ok {
+		buf.WriteString(" DEFAULT " + def)
+	} else if len(defaultVal) > 0 {
+		buf.WriteString(" DEFAULT " + defaultVal)
+	}
+
 	return buf.String()
+}
+
+func listTableIndexSQL(d dbr.Dialect, table string, schema interface{}) (sqls []string) {
+	for _, index := range listIndex(schema) {
+		indexType := "INDEX"
+
+		switch strings.ToLower(index.Type) {
+		case "unique":
+			indexType = "UNIQUE INDEX"
+		case "primary":
+			indexType = "PRIMARY KEY"
+		}
+
+		columns := []string{}
+
+		for _, col := range index.Columns {
+			columns = append(columns, d.QuoteIdent(col))
+		}
+
+		indexSQL := fmt.Sprintf("CREATE %s %s ON %s (%s)",
+			indexType, d.QuoteIdent(index.Name), d.QuoteIdent(table), strings.Join(columns, ","))
+		sqls = append(sqls, indexSQL)
+	}
+
+	return
+}
+
+func getBaseDialect(session *dbr.Session) dbr.Dialect {
+	baseDialect := session.Dialect
+
+	if ld, ok := baseDialect.(*localDialect); ok {
+		baseDialect = ld.Dialect
+	}
+
+	return baseDialect
 }
 
 func splitDSN(driver, dsn string) (dbName, dsnWithoutDBName string, err error) {
@@ -177,9 +267,70 @@ func splitDSN(driver, dsn string) (dbName, dsnWithoutDBName string, err error) {
 	return
 }
 
+func parseTag2Slice(sqlTag string) (pairs []tagPair) {
+	if len(sqlTag) > 0 {
+		for _, tagField := range strings.Fields(sqlTag) {
+			parts := strings.SplitN(tagField, ":", 2)
+			if len(parts) != 2 {
+				panic(fmt.Sprintf("unknonw tag: %s", sqlTag))
+			}
+
+			pairs = append(pairs, tagPair{
+				Key: strings.TrimSpace(parts[0]),
+				Val: strings.TrimSpace(parts[1]),
+			})
+		}
+	}
+
+	return
+}
+
+func parseTag2Map(sqlTag string) map[string]string {
+	pairs := make(map[string]string)
+
+	for _, pair := range parseTag2Slice(sqlTag) {
+		pairs[pair.Key] = pair.Val
+	}
+
+	return pairs
+}
+
+func listIndex(schema interface{}) (pairs map[string]*indexInfo) {
+	tp := reflect.Indirect(reflect.ValueOf(schema)).Type()
+	pairs = make(map[string]*indexInfo)
+
+	for i := 0; i < tp.NumField(); i++ {
+		field := tp.Field(i)
+		slice := parseTag2Slice(field.Tag.Get("sql"))
+		column := dbr.NameMapping(field.Name)
+
+		for _, pair := range slice {
+			if pair.Key == "index" {
+				parts := strings.SplitN(pair.Val, ",", 2)
+				indexName := parts[0]
+				indexType := ""
+				if len(parts) > 1 {
+					indexType = parts[1]
+				}
+				if index, ok := pairs[indexName]; ok {
+					index.Columns = append(index.Columns, column)
+				} else {
+					pairs[indexName] = &indexInfo{
+						Name:    indexName,
+						Type:    indexType,
+						Columns: []string{column},
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
 const (
 	kindType_Number = "number"
 	kindType_String = "string"
+	kindType_Object = "object"
 )
 
 func kindType(kind reflect.Kind) string {
@@ -197,19 +348,25 @@ func kindType(kind reflect.Kind) string {
 		kind == reflect.Float32 ||
 		kind == reflect.Float64 {
 		return kindType_Number
-	} else {
+	} else if kind == reflect.String {
 		return kindType_String
+	} else {
+		return kindType_Object
 	}
 }
 
-func fieldKind(field reflect.StructField) reflect.Kind {
+func fieldType(field reflect.StructField) reflect.Type {
 	fk := field.Type.Kind()
 
 	if fk == reflect.Ptr {
-		fk = field.Type.Elem().Kind()
+		return field.Type.Elem()
 	}
 
-	return fk
+	return field.Type
+}
+
+func fieldKind(field reflect.StructField) reflect.Kind {
+	return fieldType(field).Kind()
 }
 
 func findIndex(list []string, e string) int {
