@@ -1,4 +1,4 @@
-package dbutil
+package db
 
 const maxRowsPerPage uint64 = 100
 

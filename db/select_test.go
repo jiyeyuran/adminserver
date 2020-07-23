@@ -1,4 +1,4 @@
-package dbutil
+package db
 
 import (
 	"fmt"
@@ -9,7 +9,6 @@ import (
 	"github.com/gocraft/dbr/v2/dialect"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/require"
-	"jhmeeting.com/adminserver/app"
 )
 
 type People struct {
@@ -19,8 +18,8 @@ type People struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
 
-func createSession(dbConfig app.DBConfig) *dbr.Session {
-	return app.NewDB(dbConfig, true)
+func createSession(dbConfig Config) *dbr.Session {
+	return NewSQLDB(dbConfig, true)
 }
 
 func reset(t *testing.T, sess *dbr.Session) {
@@ -48,7 +47,7 @@ func reset(t *testing.T, sess *dbr.Session) {
 }
 
 func TestSelect(t *testing.T) {
-	session := createSession(app.DBConfig{
+	session := createSession(Config{
 		Driver: "sqlite3",
 		DSN:    ":memory:",
 	})

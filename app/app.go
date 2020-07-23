@@ -10,6 +10,7 @@ import (
 	"github.com/go-redis/redis"
 	"github.com/gocraft/dbr/v2"
 	"github.com/spf13/viper"
+	"jhmeeting.com/adminserver/db"
 )
 
 type App struct {
@@ -22,18 +23,12 @@ type AppConfig struct {
 	Port  int         `json:"port,omitempty"`
 	API   APIConfig   `json:"api,omitempty"`
 	Redis RedisConfig `json:"redis,omitempty"`
-	DB    DBConfig    `json:"db,omitempty"`
+	DB    db.Config   `json:"db,omitempty"`
 }
 
 type APIConfig struct {
 	URL   string `json:"url,omitempty"`
 	Token string `json:"token,omitempty"`
-}
-
-type DBConfig struct {
-	Driver   string `json:"driver,omitempty"`
-	DSN      string `json:"dsn,omitempty"`
-	Timezone string `json:"timezone,omitempty"`
 }
 
 type RedisConfig struct {
@@ -83,14 +78,14 @@ func NewApp(configLocations ...string) *App {
 	time.Local = time.UTC
 	debug := gin.Mode() == gin.DebugMode
 
-	if err := initDB(appConfig.DB, NewDBEventReceiver(debug)); err != nil {
+	if err := db.CreateDatabase(appConfig.DB); err != nil {
 		panic(err)
 	}
 
 	return &App{
 		config:   appConfig,
 		redisCli: newRedis(appConfig.Redis),
-		db:       NewDB(appConfig.DB, debug),
+		db:       db.NewSQLDB(appConfig.DB, debug),
 	}
 }
 
