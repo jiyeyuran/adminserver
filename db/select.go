@@ -7,7 +7,7 @@ import (
 )
 
 // 通用的查询接口
-type Select struct {
+type Selector struct {
 	session dbr.SessionRunner
 
 	Table      interface{} `json:"table,omitempty"`
@@ -108,21 +108,21 @@ func (s SelectResult) First() (m map[string]interface{}) {
 	return
 }
 
-func NewSelect(session dbr.SessionRunner) *Select {
-	return &Select{session: session}
+func NewSelector(session dbr.SessionRunner) *Selector {
+	return &Selector{session: session}
 }
 
-func (s *Select) DisableJoin() {
+func (s *Selector) DisableJoin() {
 	s.JoinTables = nil
 }
 
-func (s *Select) From(table interface{}) *Select {
+func (s *Selector) From(table interface{}) *Selector {
 	s.Table = table
 
 	return s
 }
 
-func (s *Select) Join(table interface{}, on string) *Select {
+func (s *Selector) Join(table interface{}, on string) *Selector {
 	s.JoinTables = append(s.JoinTables, JoinTable{
 		Table: table,
 		On:    on,
@@ -131,7 +131,7 @@ func (s *Select) Join(table interface{}, on string) *Select {
 	return s
 }
 
-func (s *Select) LeftJoin(table interface{}, on string) *Select {
+func (s *Selector) LeftJoin(table interface{}, on string) *Selector {
 	s.JoinTables = append(s.JoinTables, JoinTable{
 		Table:    table,
 		JoinType: JoinType_Left,
@@ -141,7 +141,7 @@ func (s *Select) LeftJoin(table interface{}, on string) *Select {
 	return s
 }
 
-func (s *Select) RightJoin(table interface{}, on string) *Select {
+func (s *Selector) RightJoin(table interface{}, on string) *Selector {
 	s.JoinTables = append(s.JoinTables, JoinTable{
 		Table:    table,
 		JoinType: JoinType_Right,
@@ -151,7 +151,7 @@ func (s *Select) RightJoin(table interface{}, on string) *Select {
 	return s
 }
 
-func (s *Select) FullJoin(table interface{}, on string) *Select {
+func (s *Selector) FullJoin(table interface{}, on string) *Selector {
 	s.JoinTables = append(s.JoinTables, JoinTable{
 		Table:    table,
 		JoinType: JoinType_Full,
@@ -161,17 +161,17 @@ func (s *Select) FullJoin(table interface{}, on string) *Select {
 	return s
 }
 
-func (s *Select) Paginate(page, perPage uint64) *Select {
+func (s *Selector) Paginate(page, perPage uint64) *Selector {
 	s.Pagination = NewPagination(page, perPage)
 
 	return s
 }
 
-func (s Select) Load(value interface{}) (count int, err error) {
+func (s Selector) Load(value interface{}) (count int, err error) {
 	return s.Stmt().Load(value)
 }
 
-func (s Select) Count() (count int64, err error) {
+func (s Selector) Count() (count int64, err error) {
 	stmt := s.session.Select("COUNT(*)").From(s.Table)
 
 	for _, condition := range s.Conditions {
@@ -185,7 +185,7 @@ func (s Select) Count() (count int64, err error) {
 	return
 }
 
-func (s Select) LoadPage(items interface{}, columns ...string) (result *PageResult, err error) {
+func (s Selector) LoadPage(items interface{}, columns ...string) (result *PageResult, err error) {
 	if tp := reflect.TypeOf(items); tp.Kind() != reflect.Ptr {
 		panic("items is not pointer")
 	}
@@ -218,7 +218,7 @@ func (s Select) LoadPage(items interface{}, columns ...string) (result *PageResu
 	return
 }
 
-func (s Select) Stmt() *dbr.SelectStmt {
+func (s Selector) Stmt() *dbr.SelectStmt {
 	var cols []string
 
 	for _, col := range s.Cols {
