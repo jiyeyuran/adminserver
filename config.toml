@@ -1,10 +1,11 @@
 port = 8004
+secret = "test"
 
 [api]
 url = ""
 token = ""
 
 [db]
-driver = "mysql"
-dsn = ""
+driver = "sqlite3"
+dsn = ":memory:"
 timezone = ""

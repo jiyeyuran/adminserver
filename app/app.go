@@ -2,10 +2,12 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"strings"
 	"time"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-redis/redis"
 	"github.com/gocraft/dbr/v2"
@@ -20,10 +22,11 @@ type App struct {
 }
 
 type AppConfig struct {
-	Port  int         `json:"port,omitempty"`
-	API   APIConfig   `json:"api,omitempty"`
-	Redis RedisConfig `json:"redis,omitempty"`
-	DB    db.Config   `json:"db,omitempty"`
+	Port   int         `json:"port,omitempty"`
+	Secret string      `json:"secret,omitempty"`
+	API    APIConfig   `json:"api,omitempty"`
+	Redis  RedisConfig `json:"redis,omitempty"`
+	DB     db.Config   `json:"db,omitempty"`
 }
 
 type APIConfig struct {
@@ -69,12 +72,6 @@ func NewApp(configLocations ...string) *App {
 		log.Printf("config: %s", data)
 	}
 
-	if len(appConfig.DB.Driver) == 0 {
-		if parts := strings.SplitN(appConfig.DB.DSN, "://", 2); len(parts) == 2 {
-			appConfig.DB.Driver = parts[0]
-		}
-	}
-
 	time.Local = time.UTC
 	debug := gin.Mode() == gin.DebugMode
 
@@ -99,6 +96,28 @@ func (app App) RedisCli() redis.UniversalClient {
 
 func (app App) DB() *dbr.Session {
 	return app.db
+}
+
+func (app App) CreateToken(claims jwt.MapClaims) string {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(app.config.Secret)
+	if err != nil {
+		panic(err)
+	}
+	return tokenString
+}
+
+func (app App) ParseToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(app.config.Secret), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return token.Claims.(jwt.MapClaims), nil
 }
 
 func newRedis(config RedisConfig) redis.UniversalClient {
