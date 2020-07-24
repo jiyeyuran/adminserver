@@ -46,7 +46,7 @@ func reset(t *testing.T, sess *dbr.Session) {
 	}
 }
 
-func TestSelect(t *testing.T) {
+func TestSelector(t *testing.T) {
 	session := createSession(Config{
 		Driver: "sqlite3",
 		DSN:    ":memory:",
@@ -68,7 +68,7 @@ func TestSelect(t *testing.T) {
 	}
 
 	items := []People{}
-	sel := NewSelect(session)
+	sel := NewSelector(session)
 
 	result, err := sel.From("dbr_people").LoadPage(&items)
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestSelect(t *testing.T) {
 	require.Len(t, items, n)
 
 	items = []People{}
-	sel = NewSelect(session)
+	sel = NewSelector(session)
 	result, err = sel.From("dbr_people").Paginate(0, 5).LoadPage(&items)
 
 	require.NoError(t, err)
