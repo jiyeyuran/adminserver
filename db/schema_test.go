@@ -63,7 +63,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 			Dialect: dialect.SQLite3,
 			Want: `CREATE TABLE IF NOT EXISTS "test_table"(
 "a" VARCHAR(255) NOT NULL DEFAULT '',
-"b" INT(11) NOT NULL DEFAULT '0',
+"b" INTEGER NOT NULL DEFAULT '0',
 "c" TEXT NOT NULL,
 "d" DATETIME NOT NULL,
 "e" VARCHAR(255) NULL,
@@ -75,7 +75,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 			Dialect: dialect.MySQL,
 			Want: "CREATE TABLE IF NOT EXISTS `test_table`(\n" +
 				"`a` VARCHAR(255) NOT NULL DEFAULT '',\n" +
-				"`b` INT(11) NOT NULL DEFAULT '0',\n" +
+				"`b` INTEGER NOT NULL DEFAULT '0',\n" +
 				"`c` TEXT NOT NULL,\n" +
 				"`d` DATETIME NOT NULL,\n" +
 				"`e` VARCHAR(255) NULL,\n" +
@@ -86,7 +86,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 			Dialect: dialect.PostgreSQL,
 			Want: `CREATE TABLE IF NOT EXISTS "test_table"(
 "a" VARCHAR(255) NOT NULL DEFAULT '',
-"b" INT(11) NOT NULL DEFAULT '0',
+"b" INTEGER NOT NULL DEFAULT '0',
 "c" TEXT NOT NULL,
 "d" TIMESTAMP NOT NULL,
 "e" VARCHAR(255) NULL,

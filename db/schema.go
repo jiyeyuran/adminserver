@@ -134,16 +134,6 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	buf.WriteString(d.QuoteIdent(columnName))
 	buf.WriteString(" ")
 
-	if strings.ToLower(field.Name) == "id" && kindType(kind) == kindType_Number {
-		switch d {
-		case dialect.MySQL, dialect.PostgreSQL:
-			buf.WriteString("SERIAL PRIMARY KEY")
-		case dialect.SQLite3:
-			buf.WriteString("INTEGER PRIMARY KEY AUTOINCREMENT")
-		}
-		return buf.String()
-	}
-
 	sqlTag := tag.Get("sql")
 	pairs := parseTag2Map(sqlTag)
 	defaultLen, defaultVal := "", ""
@@ -153,12 +143,11 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	} else {
 		switch kindType(kind) {
 		case kindType_Number:
-			if kind == reflect.Float32 || kind == reflect.Float64 {
+			if isFloatNumber(kind) {
 				buf.WriteString("DECIMAL")
 				defaultLen = "(20,2)"
 			} else {
-				buf.WriteString("INT")
-				defaultLen = "(11)"
+				buf.WriteString("INTEGER")
 			}
 			defaultVal = "'0'"
 		case kindType_String:
@@ -185,6 +174,19 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	}
 
 	buf.WriteString(" ")
+
+	if isUnsignedNumber(kind) {
+		buf.WriteString("UNSIGNED ")
+	}
+
+	if strings.ToLower(field.Name) == "id" && len(pairs["index"]) == 0 {
+		buf.WriteString("PRIMARY KEY")
+
+		if kindType(kind) == kindType_Number {
+			buf.WriteString(" AUTOINCREMENT")
+		}
+		return buf.String()
+	}
 
 	if field.Type.Kind() == reflect.Ptr {
 		buf.WriteString("NULL")
@@ -353,6 +355,18 @@ func kindType(kind reflect.Kind) string {
 	} else {
 		return kindType_Object
 	}
+}
+
+func isUnsignedNumber(kind reflect.Kind) bool {
+	return kind == reflect.Uint ||
+		kind == reflect.Uint8 ||
+		kind == reflect.Uint16 ||
+		kind == reflect.Uint32 ||
+		kind == reflect.Uint64
+}
+
+func isFloatNumber(kind reflect.Kind) bool {
+	return kind == reflect.Float32 || kind == reflect.Float64
 }
 
 func fieldType(field reflect.StructField) reflect.Type {
