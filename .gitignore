@@ -1,3 +1,4 @@
 adminserver
 *.exe
 .DS_Store
+.vs
