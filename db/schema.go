@@ -45,7 +45,7 @@ func createDatabase(session *dbr.Session, dbName string) (err error) {
 	case dialect.MySQL:
 		sqlstr := "CREATE DATABASE IF NOT EXISTS " +
 			session.QuoteIdent(dbName) +
-			" DEFAULT CHARSET utf8mb4 COLLATE utf8_general_ci"
+			" DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_general_ci"
 		_, err = session.InsertBySql(sqlstr).Exec()
 		return errors.WithStack(err)
 
@@ -159,7 +159,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		pKeySQL := "PRIMARY KEY"
 
 		switch d {
-		case dialect.PostgreSQL:
+		case dialect.MySQL, dialect.PostgreSQL:
 			pKeySQL = "SERIAL " + pKeySQL
 		default:
 			pKeySQL = "INTEGER " + pKeySQL + " AUTOINCREMENT"
