@@ -13,13 +13,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-type indexInfo struct {
+type indexTag struct {
 	Name    string
 	Type    string
 	Columns []string
 }
 
-type tagPair struct {
+type tagInfo struct {
 	Key string
 	Val string
 }
@@ -162,7 +162,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		case dialect.MySQL, dialect.PostgreSQL:
 			pKeySQL = "SERIAL " + pKeySQL
 		default:
-			pKeySQL = "INTEGER " + pKeySQL + " AUTOINCREMENT"
+			pKeySQL = "INTEGER " + pKeySQL
 		}
 
 		buf.WriteString(pKeySQL)
@@ -234,12 +234,12 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 }
 
 func listTableIndexSQL(d dbr.Dialect, table string, schema interface{}) (sqls []string) {
-	for _, index := range listIndex(schema) {
+	for _, index := range listIndexTags(schema) {
 		indexType := "INDEX"
 
 		switch strings.ToLower(index.Type) {
 		case "unique":
-			indexType = "UNIQUE INDEX"
+			indexType = "UNIQUE"
 		case "primary":
 			indexType = "PRIMARY KEY"
 		}
@@ -298,60 +298,64 @@ func splitDSN(driver, dsn string) (dbName, dsnWithoutDBName string, err error) {
 	return
 }
 
-func parseTag2Slice(sqlTag string) (pairs []tagPair) {
-	if len(sqlTag) > 0 {
-		for _, tagField := range strings.Fields(sqlTag) {
-			parts := strings.SplitN(tagField, ":", 2)
-			if len(parts) != 2 {
-				panic(fmt.Sprintf("unknonw tag: %s", sqlTag))
-			}
+func parseTags(sqlTag string) (tags []tagInfo) {
+	if len(sqlTag) == 0 {
+		return
+	}
 
-			pairs = append(pairs, tagPair{
-				Key: strings.TrimSpace(parts[0]),
-				Val: strings.TrimSpace(parts[1]),
-			})
+	for _, tagField := range strings.Fields(sqlTag) {
+		parts := strings.SplitN(tagField, ":", 2)
+		if len(parts) != 2 {
+			panic(fmt.Sprintf("unknonw tag: %s", sqlTag))
 		}
+
+		tags = append(tags, tagInfo{
+			Key: strings.TrimSpace(parts[0]),
+			Val: strings.TrimSpace(parts[1]),
+		})
 	}
 
 	return
 }
 
 func parseTag2Map(sqlTag string) map[string]string {
-	pairs := make(map[string]string)
+	tags := make(map[string]string)
 
-	for _, pair := range parseTag2Slice(sqlTag) {
-		pairs[pair.Key] = pair.Val
+	for _, tag := range parseTags(sqlTag) {
+		tags[tag.Key] = tag.Val
 	}
 
-	return pairs
+	return tags
 }
 
-func listIndex(schema interface{}) (pairs map[string]*indexInfo) {
+func listIndexTags(schema interface{}) (tags []*indexTag) {
 	tp := reflect.Indirect(reflect.ValueOf(schema)).Type()
-	pairs = make(map[string]*indexInfo)
 
 	for i := 0; i < tp.NumField(); i++ {
 		field := tp.Field(i)
-		slice := parseTag2Slice(field.Tag.Get("sql"))
+		sqlTags := parseTags(field.Tag.Get("sql"))
 		column := dbr.NameMapping(field.Name)
 
-		for _, pair := range slice {
-			if pair.Key == "index" {
-				parts := strings.SplitN(pair.Val, ",", 2)
-				indexName := parts[0]
-				indexType := ""
-				if len(parts) > 1 {
-					indexType = parts[1]
-				}
-				if index, ok := pairs[indexName]; ok {
-					index.Columns = append(index.Columns, column)
-				} else {
-					pairs[indexName] = &indexInfo{
-						Name:    indexName,
-						Type:    indexType,
-						Columns: []string{column},
-					}
-				}
+		for _, tag := range sqlTags {
+			if tag.Key != "index" {
+				continue
+			}
+			parts := strings.SplitN(tag.Val, ",", 2)
+			indexName := parts[0]
+			indexType := "index"
+
+			if len(parts) > 1 {
+				indexType = parts[1]
+			}
+
+			if index := findIndexTag(tags, indexName); index >= 0 {
+				tags[index].Columns = append(tags[index].Columns, column)
+			} else {
+				tags = append(tags, &indexTag{
+					Name:    indexName,
+					Type:    indexType,
+					Columns: []string{column},
+				})
 			}
 		}
 	}
@@ -415,6 +419,15 @@ func fieldKind(field reflect.StructField) reflect.Kind {
 func findIndex(list []string, e string) int {
 	for i, s := range list {
 		if s == e {
+			return i
+		}
+	}
+	return -1
+}
+
+func findIndexTag(tags []*indexTag, name string) int {
+	for i, tag := range tags {
+		if tag.Name == name {
 			return i
 		}
 	}

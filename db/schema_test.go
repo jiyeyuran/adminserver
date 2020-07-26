@@ -2,6 +2,7 @@ package db
 
 import (
 	"testing"
+	"time"
 
 	"github.com/gocraft/dbr/v2"
 	"github.com/gocraft/dbr/v2/dialect"
@@ -153,4 +154,18 @@ func TestListTableIndexSQL(t *testing.T) {
 	require.Len(t, sqls, 1)
 
 	require.Equal(t, "CREATE UNIQUE INDEX `a_b` ON `test` (`a`,`b`)", sqls[0])
+}
+
+func TestParseTags(t *testing.T) {
+	type People struct {
+		Id    int
+		Name  string    `sql:"index:ne,unique"`
+		Email string    `sql:"index:ne,unique"`
+		Ctime time.Time `sql:"index:ctime"`
+	}
+	indexSQLs := listTableIndexSQL(dialect.MySQL, "people", People{})
+	require.Equal(t, []string{
+		"CREATE UNIQUE `ne` ON `people` (`name`,`email`)",
+		"CREATE INDEX `ctime` ON `people` (`ctime`)",
+	}, indexSQLs)
 }
