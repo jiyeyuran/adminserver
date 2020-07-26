@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"strings"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -72,7 +71,6 @@ func NewApp(configLocations ...string) *App {
 		log.Printf("config: %s", data)
 	}
 
-	time.Local = time.UTC
 	debug := gin.Mode() == gin.DebugMode
 
 	if err := db.CreateDatabase(appConfig.DB); err != nil {

@@ -32,7 +32,7 @@ func (d localDialect) EncodeTime(t time.Time) string {
 }
 
 func loadLocation(dbConfig Config) (loc *time.Location, err error) {
-	loc = time.Local
+	loc = time.UTC
 
 	if len(dbConfig.Timezone) > 0 {
 		loc, err = time.LoadLocation(dbConfig.Timezone)
@@ -47,6 +47,9 @@ func NewSQLDB(dbConfig Config, debug bool) (session *dbr.Session) {
 	if err != nil {
 		panic(err)
 	}
+
+	// TODO: 设置数据库的时区，无法处理多数据库不同时区
+	Local = loc
 
 	conn, err := dbr.Open(dbConfig.Driver, dbConfig.DSN, EventLogger)
 	if err != nil {

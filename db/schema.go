@@ -31,20 +31,35 @@ func CreateDatabase(dbConfig Config) (err error) {
 		return
 	}
 
-	conn, err := dbr.Open(dbConfig.Driver, dsnWithoutDBName, nil)
+	conn, err := dbr.Open(dbConfig.Driver, dsnWithoutDBName, NewEventLogger(true))
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	defer conn.Close()
 
-	sqlstr := "CREATE DATABASE IF NOT EXISTS " + conn.QuoteIdent(dbName)
+	return createDatabase(conn.NewSession(nil), dbName)
+}
 
-	if dbConfig.Driver == "mysql" {
-		sqlstr += " DEFAULT CHARSET utf8mb4 COLLATE utf8_general_ci"
+func createDatabase(session *dbr.Session, dbName string) (err error) {
+	switch getBaseDialect(session) {
+	case dialect.MySQL:
+		sqlstr := "CREATE DATABASE IF NOT EXISTS " +
+			session.QuoteIdent(dbName) +
+			" DEFAULT CHARSET utf8mb4 COLLATE utf8_general_ci"
+		_, err = session.InsertBySql(sqlstr).Exec()
+		return errors.WithStack(err)
+
+	case dialect.PostgreSQL:
+		count, _ := session.Select("count(*)").From("pg_database").Where("datname=?", dbName).ReturnInt64()
+		if count == 0 {
+			sqlstr := "CREATE DATABASE " + session.QuoteIdent(dbName)
+			_, err = session.InsertBySql(sqlstr).Exec()
+			return errors.WithStack(err)
+		}
+
 	}
 
-	_, err = conn.Exec(sqlstr)
-	return errors.WithStack(err)
+	return
 }
 
 // CreateDatabase 如果表不存在，则创建
@@ -138,6 +153,23 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	pairs := parseTag2Map(sqlTag)
 	defaultLen, defaultVal := "", ""
 
+	if strings.ToLower(field.Name) == "id" &&
+		len(pairs["index"]) == 0 &&
+		kindType(kind) == kindType_Number {
+		pKeySQL := "PRIMARY KEY"
+
+		switch d {
+		case dialect.PostgreSQL:
+			pKeySQL = "SERIAL " + pKeySQL
+		default:
+			pKeySQL = "INTEGER " + pKeySQL + " AUTOINCREMENT"
+		}
+
+		buf.WriteString(pKeySQL)
+
+		return buf.String()
+	}
+
 	if typ := pairs["type"]; len(typ) > 0 {
 		buf.WriteString(strings.ToUpper(typ))
 	} else {
@@ -182,9 +214,6 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	if strings.ToLower(field.Name) == "id" && len(pairs["index"]) == 0 {
 		buf.WriteString("PRIMARY KEY")
 
-		if kindType(kind) == kindType_Number {
-			buf.WriteString(" AUTOINCREMENT")
-		}
 		return buf.String()
 	}
 

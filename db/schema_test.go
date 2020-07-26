@@ -8,13 +8,50 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+var configs = []Config{
+	{
+		Driver: "sqlite3",
+		DSN:    ":memory:",
+	},
+	{
+		Driver:   "postgres",
+		DSN:      "postgres://postgres:123456@localhost:5432/testdb?sslmode=disable",
+		Timezone: "Asia/Shanghai",
+	},
+}
+var sessions []*dbr.Session
+
+func createSession(dbConfig Config) *dbr.Session {
+	return NewSQLDB(dbConfig, true)
+}
+
+func init() {
+	// time.Local = time.UTC
+
+	for _, config := range configs {
+		if err := CreateDatabase(config); err != nil {
+			panic(err)
+		}
+		sessions = append(sessions, createSession(config))
+	}
+
+	for _, sess := range sessions {
+		if err := dropTable(sess, "people"); err != nil {
+			panic(err)
+		}
+		if err := CreateTable(sess, "people", People{}); err != nil {
+			panic(err)
+		}
+	}
+}
+
 type TestTable struct {
 	A string
-	B int
+	B int `sql:"default:'1'"`
 	C struct{}
 	D dbr.NullTime
 	E *string
-	F string `sql:"type:text length:15 default:'aa'"`
+	F string `sql:"type:text"`
 }
 
 type TestTable2 struct {
@@ -24,20 +61,26 @@ type TestTable2 struct {
 	C  string `sql:"index:c"`
 }
 
-var sqlite3Session = createSession(Config{
-	Driver: "sqlite3",
-	DSN:    ":memory:",
-})
+func dropTable(session *dbr.Session, table string) error {
+	_, err := session.InsertBySql("Drop Table If Exists " + session.QuoteIdent(table)).Exec()
+	return err
+}
 
 func TestCreateTable(t *testing.T) {
-	err := CreateTable(sqlite3Session, "test_table", TestTable{})
-	require.NoError(t, err)
+	for _, session := range sessions {
+		dropTable(session, "test_table")
 
-	err = CreateTable(sqlite3Session, "test_table", TestTable{})
-	require.NoError(t, err)
+		err := CreateTable(session, "test_table", TestTable{})
+		require.NoError(t, err)
 
-	err = CreateTable(sqlite3Session, "test_table2", TestTable2{})
-	require.NoError(t, err)
+		err = CreateTable(session, "test_table", TestTable{})
+		require.NoError(t, err)
+
+		dropTable(session, "test_table2")
+
+		err = CreateTable(session, "test_table2", TestTable2{})
+		require.NoError(t, err)
+	}
 }
 
 func TestSplitDSN(t *testing.T) {
@@ -63,11 +106,11 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 			Dialect: dialect.SQLite3,
 			Want: `CREATE TABLE IF NOT EXISTS "test_table"(
 "a" VARCHAR(255) NOT NULL DEFAULT '',
-"b" INTEGER NOT NULL DEFAULT '0',
+"b" INTEGER NOT NULL DEFAULT '1',
 "c" TEXT NOT NULL,
 "d" DATETIME NOT NULL,
 "e" VARCHAR(255) NULL,
-"f" TEXT(15) NOT NULL DEFAULT 'aa'
+"f" TEXT NOT NULL
 )`,
 		},
 		{
@@ -75,22 +118,22 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 			Dialect: dialect.MySQL,
 			Want: "CREATE TABLE IF NOT EXISTS `test_table`(\n" +
 				"`a` VARCHAR(255) NOT NULL DEFAULT '',\n" +
-				"`b` INTEGER NOT NULL DEFAULT '0',\n" +
+				"`b` INTEGER NOT NULL DEFAULT '1',\n" +
 				"`c` TEXT NOT NULL,\n" +
 				"`d` DATETIME NOT NULL,\n" +
 				"`e` VARCHAR(255) NULL,\n" +
-				"`f` TEXT(15) NOT NULL DEFAULT 'aa'\n)",
+				"`f` TEXT NOT NULL\n)",
 		},
 		{
 			Driver:  "postgres",
 			Dialect: dialect.PostgreSQL,
 			Want: `CREATE TABLE IF NOT EXISTS "test_table"(
 "a" VARCHAR(255) NOT NULL DEFAULT '',
-"b" INTEGER NOT NULL DEFAULT '0',
+"b" INTEGER NOT NULL DEFAULT '1',
 "c" TEXT NOT NULL,
 "d" TIMESTAMP NOT NULL,
 "e" VARCHAR(255) NULL,
-"f" TEXT(15) NOT NULL DEFAULT 'aa'
+"f" TEXT NOT NULL
 )`,
 		},
 	}
