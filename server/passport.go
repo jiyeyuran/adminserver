@@ -23,8 +23,8 @@ func NewPassportServer(app *app.App) *PassportServer {
 func (s PassportServer) Signup(c *gin.Context) {
 	var param struct {
 		app.User
-		CaptchaId   string
-		CaptchaCode string
+		CaptchaId   string `json:"captcha_id,omitempty"`
+		CaptchaCode string `json:"captcha_code,omitempty"`
 	}
 	if c.BindJSON(&param) != nil {
 		return
@@ -52,11 +52,10 @@ func (s PassportServer) Signup(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
-
-	param.Password = ""
 	token := s.CreateToken(jwt.MapClaims{
 		"id": param.Id,
 	})
+	param.Password = ""
 	c.SetCookie("rtcadmin", token, 0, "/", "", true, true)
 	c.JSON(200, param.User)
 }
@@ -64,8 +63,8 @@ func (s PassportServer) Signup(c *gin.Context) {
 func (s PassportServer) Login(c *gin.Context) {
 	var param struct {
 		app.User
-		CaptchaId   string
-		CaptchaCode string
+		CaptchaId   string `json:"captcha_id,omitempty"`
+		CaptchaCode string `json:"captcha_code,omitempty"`
 	}
 	if c.BindJSON(&param) != nil {
 		return
