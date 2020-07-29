@@ -150,7 +150,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	buf.WriteString(" ")
 
 	sqlTag := tag.Get("sql")
-	pairs := parseTag2Map(sqlTag)
+	pairs := parseTags2Map(sqlTag)
 	defaultLen, defaultVal := "", ""
 
 	if strings.ToLower(field.Name) == "id" &&
@@ -159,8 +159,10 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		pKeySQL := "PRIMARY KEY"
 
 		switch d {
-		case dialect.MySQL, dialect.PostgreSQL:
+		case dialect.PostgreSQL:
 			pKeySQL = "SERIAL " + pKeySQL
+		case dialect.MySQL:
+			pKeySQL = "BIGINT UNSIGNED NOT NULL AUTO_INCREMENT " + pKeySQL
 		default:
 			pKeySQL = "INTEGER " + pKeySQL
 		}
@@ -174,26 +176,35 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		buf.WriteString(strings.ToUpper(typ))
 	} else {
 		switch kindType(kind) {
-		case kindType_Number:
-			if isFloatNumber(kind) {
-				buf.WriteString("DECIMAL")
-				defaultLen = "(20,2)"
+		case kindType_Boolean:
+			if d == dialect.PostgreSQL {
+				buf.WriteString("BOOLEAN")
+				defaultVal = "'false'"
 			} else {
-				buf.WriteString("INTEGER")
+				buf.WriteString("TINYINT")
+				defaultVal = "'0'"
 			}
+
+		case kindType_Integer:
+			buf.WriteString("INTEGER")
 			defaultVal = "'0'"
+
+		case kindType_Float:
+			buf.WriteString("DECIMAL")
+			defaultLen, defaultVal = "(20,2)", "'0'"
+
 		case kindType_String:
 			buf.WriteString("VARCHAR")
 			defaultLen, defaultVal = "(255)", "''"
+
 		case kindType_Object:
-			switch fieldType(field) {
-			case reflect.TypeOf(dbr.NullTime{}), reflect.TypeOf(time.Time{}):
+			if isDateTimeType(fieldType(field)) {
 				if d == dialect.PostgreSQL {
 					buf.WriteString("TIMESTAMP")
 				} else {
 					buf.WriteString("DATETIME")
 				}
-			default:
+			} else {
 				buf.WriteString("TEXT")
 			}
 		}
@@ -239,7 +250,7 @@ func listTableIndexSQL(d dbr.Dialect, table string, schema interface{}) (sqls []
 
 		switch strings.ToLower(index.Type) {
 		case "unique":
-			indexType = "UNIQUE"
+			indexType = "UNIQUE INDEX"
 		case "primary":
 			indexType = "PRIMARY KEY"
 		}
@@ -318,7 +329,7 @@ func parseTags(sqlTag string) (tags []tagInfo) {
 	return
 }
 
-func parseTag2Map(sqlTag string) map[string]string {
+func parseTags2Map(sqlTag string) map[string]string {
 	tags := make(map[string]string)
 
 	for _, tag := range parseTags(sqlTag) {
@@ -363,29 +374,30 @@ func listIndexTags(schema interface{}) (tags []*indexTag) {
 }
 
 const (
-	kindType_Number = "number"
-	kindType_String = "string"
-	kindType_Object = "object"
+	kindType_Number  = "number"
+	kindType_Integer = "integer"
+	kindType_Float   = "float"
+	kindType_String  = "string"
+	kindType_Boolean = "boolean"
+	kindType_Object  = "object"
 )
 
 func kindType(kind reflect.Kind) string {
-	if kind == reflect.Bool ||
-		kind == reflect.Int ||
-		kind == reflect.Int8 ||
-		kind == reflect.Int16 ||
-		kind == reflect.Int32 ||
-		kind == reflect.Int64 ||
-		kind == reflect.Uint ||
-		kind == reflect.Uint8 ||
-		kind == reflect.Uint16 ||
-		kind == reflect.Uint32 ||
-		kind == reflect.Uint64 ||
-		kind == reflect.Float32 ||
-		kind == reflect.Float64 {
-		return kindType_Number
-	} else if kind == reflect.String {
+	switch kind {
+	case reflect.Bool:
+		return kindType_Boolean
+
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return kindType_Integer
+
+	case reflect.Float32, reflect.Float64:
+		return kindType_Float
+
+	case reflect.String:
 		return kindType_String
-	} else {
+
+	default:
 		return kindType_Object
 	}
 }
@@ -398,8 +410,9 @@ func isUnsignedNumber(kind reflect.Kind) bool {
 		kind == reflect.Uint64
 }
 
-func isFloatNumber(kind reflect.Kind) bool {
-	return kind == reflect.Float32 || kind == reflect.Float64
+// isDateTimeType typ should be struct type
+func isDateTimeType(typ reflect.Type) bool {
+	return typ == reflect.TypeOf(dbr.NullTime{}) || typ == reflect.TypeOf(time.Time{})
 }
 
 func fieldType(field reflect.StructField) reflect.Type {
