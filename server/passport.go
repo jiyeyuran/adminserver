@@ -47,7 +47,7 @@ func (s PassportServer) Signup(c *gin.Context) {
 
 	_, err = s.DB().InsertInto("users").
 		Columns("name", "mobile", "password", "ctime").
-		Record(param.User).ExecContext(ctx)
+		Record(&param.User).ExecContext(ctx)
 	if err != nil {
 		c.AbortWithError(500, err)
 		return
