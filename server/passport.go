@@ -2,11 +2,13 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/dchest/captcha"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 	"jhmeeting.com/adminserver/app"
 )
 
@@ -46,17 +48,20 @@ func (s PassportServer) Signup(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	_, err = s.DB().InsertInto("users").
-		Columns("name", "mobile", "password", "ctime").
+		Columns("name", "password", "ctime").
 		Record(&param.User).ExecContext(ctx)
 	if err != nil {
 		c.AbortWithError(500, err)
 		return
 	}
-	token := s.CreateToken(jwt.MapClaims{
-		"id": param.Id,
+	token := s.CreateToken(jwt.StandardClaims{
+		Id:       xid.New().String(),
+		Audience: fmt.Sprintf("%d", param.Id),
+		Issuer:   app.CookieName,
+		IssuedAt: time.Now().Unix(),
 	})
 	param.Password = ""
-	c.SetCookie("rtcadmin", token, 0, "/", "", true, true)
+	c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
 	c.JSON(200, param.User)
 }
 
@@ -89,13 +94,16 @@ func (s PassportServer) Login(c *gin.Context) {
 		c.AbortWithError(400, errors.New("用户名或密码错误"))
 		return
 	}
-	token := s.CreateToken(jwt.MapClaims{
-		"id": param.Id,
+	token := s.CreateToken(jwt.StandardClaims{
+		Id:       xid.New().String(),
+		Audience: fmt.Sprintf("%d", param.Id),
+		Issuer:   app.CookieName,
+		IssuedAt: time.Now().Unix(),
 	})
-	c.SetCookie("rtcadmin", token, 0, "/", "", true, true)
+	c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
 	c.JSON(200, param.User)
 }
 
 func (s PassportServer) Logout(c *gin.Context) {
-	c.SetCookie("rtcadmin", "", -1, "/", "", true, true)
+	c.SetCookie(app.CookieName, "", -1, "/", "", true, true)
 }

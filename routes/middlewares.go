@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"jhmeeting.com/adminserver/app"
 )
 
 // timeout middleware wraps the request context with a timeout
@@ -40,5 +41,29 @@ func errorMiddleware(c *gin.Context) {
 			status = 500
 		}
 		c.JSON(status, err.Last())
+	}
+}
+
+// cookie授权
+func authMiddleware(gapp *app.App) func(c *gin.Context) {
+	return func(c *gin.Context) {
+		tokenString := ""
+		if authString := c.GetHeader("Authorization"); len(authString) > 0 {
+			tokenString = strings.TrimPrefix(authString, "Bearer")
+			tokenString = strings.TrimSpace(tokenString)
+		}
+		if cookie, err := c.Cookie(app.CookieName); err == nil {
+			tokenString = cookie
+		}
+		if len(tokenString) == 0 {
+			c.AbortWithError(http.StatusNonAuthoritativeInfo, errors.New("not authrized"))
+			return
+		}
+		claims, err := gapp.ParseToken(tokenString)
+		if err != nil {
+			c.AbortWithError(http.StatusNonAuthoritativeInfo, err)
+			return
+		}
+		c.Set("uid", claims.Audience)
 	}
 }

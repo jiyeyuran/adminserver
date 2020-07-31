@@ -14,6 +14,7 @@ require (
 	github.com/onsi/ginkgo v1.14.0 // indirect
 	github.com/pelletier/go-toml v1.4.0 // indirect
 	github.com/pkg/errors v0.8.1
+	github.com/rs/xid v1.2.1
 	github.com/spf13/viper v1.7.0
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5

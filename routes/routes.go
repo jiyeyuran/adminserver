@@ -18,12 +18,35 @@ func Setup(r *gin.Engine, app *app.App) {
 		admin.GET("/captcha-id", handleCaptchaId)
 		admin.GET("/captcha/:id", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))
 
-		passport := admin.Group("passport")
+		passport := admin.Group("/passport", authMiddleware(app))
 		{
 			server := server.NewPassportServer(app)
 			passport.POST("/signup", server.Signup)
 			passport.POST("/login", server.Login)
 			passport.POST("/logout", server.Logout)
+		}
+
+		roomGroup := admin.Group("/room", authMiddleware(app))
+		{
+			roomServer := server.NewRoomServer(app)
+			roomGroup.POST("/room/info", roomServer.Info)
+			roomGroup.POST("/room/list", roomServer.List)
+			roomGroup.POST("/room/create", roomServer.Create)
+			roomGroup.POST("/room/modify", roomServer.Modify)
+			roomGroup.POST("/room/delete", roomServer.Delete)
+			roomGroup.POST("/room/token", roomServer.Token)
+		}
+
+		conferenceGroup := admin.Group("/conference", authMiddleware(app))
+		{
+			conferenceServer := server.NewConferenceServer(app)
+			conferenceGroup.POST("/conference/info", conferenceServer.Info)
+			conferenceGroup.POST("/conference/runing", conferenceServer.Runing)
+			conferenceGroup.POST("/conference/dispose", conferenceServer.Dispose)
+			conferenceGroup.POST("/conference/lock", conferenceServer.Lock)
+			conferenceGroup.POST("/conference/unlock", conferenceServer.Unlock)
+
+			conferenceGroup.POST("/conference/history", conferenceServer.History)
 		}
 	}
 }

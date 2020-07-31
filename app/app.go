@@ -1,10 +1,17 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"strings"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
@@ -14,10 +21,13 @@ import (
 	"jhmeeting.com/adminserver/db"
 )
 
+const CookieName = "rtcadmin"
+
 type App struct {
-	config   AppConfig
-	redisCli redis.UniversalClient
-	db       *dbr.Session
+	config     AppConfig
+	httpClient *http.Client
+	redisCli   redis.UniversalClient
+	db         *dbr.Session
 }
 
 type AppConfig struct {
@@ -71,16 +81,20 @@ func NewApp(configLocations ...string) *App {
 		log.Printf("config: %s", data)
 	}
 
-	debug := gin.Mode() == gin.DebugMode
-
 	if err := db.CreateDatabase(appConfig.DB); err != nil {
 		panic(err)
 	}
 
+	sqlDB := db.NewSQLDB(appConfig.DB, gin.Mode() == gin.DebugMode)
+	InitSqlDB(sqlDB)
+
 	return &App{
-		config:   appConfig,
+		config: appConfig,
+		httpClient: &http.Client{
+			Timeout: 5 * time.Second,
+		},
 		redisCli: newRedis(appConfig.Redis),
-		db:       db.NewSQLDB(appConfig.DB, debug),
+		db:       sqlDB,
 	}
 }
 
@@ -96,7 +110,7 @@ func (app App) DB() *dbr.Session {
 	return app.db
 }
 
-func (app App) CreateToken(claims jwt.MapClaims) string {
+func (app App) CreateToken(claims jwt.StandardClaims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString(app.config.Secret)
 	if err != nil {
@@ -105,17 +119,85 @@ func (app App) CreateToken(claims jwt.MapClaims) string {
 	return tokenString
 }
 
-func (app App) ParseToken(tokenString string) (jwt.MapClaims, error) {
-	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+func (app App) ParseToken(tokenString string) (claims *jwt.StandardClaims, err error) {
+	_, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		return []byte(app.config.Secret), nil
 	})
-	if err != nil {
-		return nil, err
+	return
+}
+
+func (app App) HttpClient() *http.Client {
+	return app.httpClient
+}
+
+func (app App) NewAPIRequest(path string, body interface{}) *http.Request {
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
 	}
-	return token.Claims.(jwt.MapClaims), nil
+	url := strings.TrimSuffix(app.config.API.URL, "/") + path
+	if body == nil {
+		body = gin.H{}
+	}
+	var data []byte
+	if bytes, ok := body.([]byte); ok {
+		data = bytes
+	} else {
+		bytes, err := json.Marshal(body)
+		if err != nil {
+			panic(err)
+		}
+		data = bytes
+	}
+	req, err := http.NewRequest("POST", url, bytes.NewReader(data))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Set("Authorization", "Bearer "+app.config.API.Token)
+
+	return req
+}
+
+func (app App) SendAPIRequest(path string, body interface{}) (data []byte, err error) {
+	req := app.NewAPIRequest(path, body)
+	resp, err := app.HttpClient().Do(req)
+	if err != nil {
+		return
+	}
+	defer resp.Body.Close()
+
+	data, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	if resp.StatusCode >= 400 {
+		var errResult struct {
+			Message string
+		}
+		if err = json.Unmarshal(data, &errResult); err != nil {
+			return
+		}
+		err = errors.New(errResult.Message)
+	}
+	return
+}
+
+func (app App) APIRoute(c *gin.Context, apiPath string) {
+	remote, _ := url.Parse(app.Config().API.URL)
+
+	proxy := httputil.NewSingleHostReverseProxy(remote)
+	proxy.Director = func(req *http.Request) {
+		req.Host = remote.Host
+		req.URL.Scheme = remote.Scheme
+		req.URL.Host = remote.Host
+		req.URL.Path = apiPath
+
+		req.Header.Set("Authorization", "Bearer "+app.config.API.Token)
+		req.Header.Set("X-Uid", c.GetString("uid"))
+	}
+	proxy.ServeHTTP(c.Writer, c.Request)
 }
 
 func newRedis(config RedisConfig) redis.UniversalClient {
