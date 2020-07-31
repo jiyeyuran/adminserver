@@ -65,7 +65,7 @@ func createDatabase(session *dbr.Session, dbName string) (err error) {
 // CreateDatabase 如果表不存在，则创建
 func CreateTable(session *dbr.Session, table string, schema interface{}) (err error) {
 	baseDialect := getBaseDialect(session)
-	rows, err := session.Select("*").From(table).Where("1 != 1").Rows()
+	rows, err := session.Query("select * from " + session.QuoteIdent(table) + " where 1 != 1")
 	if err != nil {
 		createSQL := schema2CreateTableSQL(baseDialect, table, schema)
 		_, err = session.InsertBySql(createSQL).Exec()
