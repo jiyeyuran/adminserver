@@ -61,6 +61,12 @@ func (s ConferenceServer) History(c *gin.Context) {
 
 	selector := db.NewSelector(s.DB())
 
+	selector.Conditions = append(selector.Conditions, []db.Condition{
+		Col: "uid",
+		Cmp: "eq",
+		Val: c.GetInt64("uid"),
+	})
+
 	if len(param.RoomName) > 0 {
 		selector.Conditions = append(selector.Conditions, []db.Condition{
 			Col: "room_name",
@@ -82,7 +88,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 			Val: param.Range.EndTime,
 		})
 	}
-	
+
 	confereces := []app.ConferenceInfo{}
 	result, err := selector.Paginate(param.Page, param.PerPage).LoadPage(&confereces)
 	if err != nil {

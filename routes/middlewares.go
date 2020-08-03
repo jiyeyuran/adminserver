@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -68,6 +69,11 @@ func authMiddleware(gapp *app.App) func(c *gin.Context) {
 			c.AbortWithError(http.StatusNonAuthoritativeInfo, err)
 			return
 		}
-		c.Set("uid", claims.Audience)
+		uid, _ := strconv.ParseInt(claims.Audience, 10, 64)
+		if uid <= 0 {
+			c.AbortWithError(http.StatusNonAuthoritativeInfo, errors.New("bad token"))
+			return
+		}
+		c.Set("uid", uid)
 	}
 }
