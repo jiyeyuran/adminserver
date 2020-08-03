@@ -59,6 +59,10 @@ func authMiddleware(gapp *app.App) func(c *gin.Context) {
 			c.AbortWithError(http.StatusNonAuthoritativeInfo, errors.New("not authrized"))
 			return
 		}
+		// from other internal server
+		if tokenString == gapp.Config().Secret {
+			return
+		}
 		claims, err := gapp.ParseToken(tokenString)
 		if err != nil {
 			c.AbortWithError(http.StatusNonAuthoritativeInfo, err)
