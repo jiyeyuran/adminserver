@@ -410,9 +410,11 @@ func isUnsignedNumber(kind reflect.Kind) bool {
 		kind == reflect.Uint64
 }
 
-// isDateTimeType typ should be struct type
+// isDateTimeType 检查类型是否是时间类型
 func isDateTimeType(typ reflect.Type) bool {
-	return typ == reflect.TypeOf(dbr.NullTime{}) || typ == reflect.TypeOf(time.Time{})
+	return typ.Kind() == reflect.Struct && (typ == reflect.TypeOf(dbr.NullTime{}) ||
+		typ == reflect.TypeOf(NullTime{}) ||
+		typ == reflect.TypeOf(time.Time{}))
 }
 
 func fieldType(field reflect.StructField) reflect.Type {
