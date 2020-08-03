@@ -45,13 +45,13 @@ func (s ConferenceServer) Unlock(c *gin.Context) {
 //History 会议室历史记录
 func (s ConferenceServer) History(c *gin.Context) {
 	var param struct {
-		RoomName string
-		Range struct {
-			StartTime db.NullTime
-			EndTime db.NullTime
-		}
-		Page uint64
-		PerPage uint64
+		RoomName string `json:"room_name,omitempty"`
+		Range    struct {
+			StartTime db.NullTime `json:"start_time,omitempty"`
+			EndTime   db.NullTime `json:"end_time,omitempty"`
+		} `json:"range,omitempty"`
+		Page    uint64 `json:"page,omitempty"`
+		PerPage uint64 `json:"per_page,omitempty"`
 	}
 
 	if c.BindJSON(&param) != nil {
