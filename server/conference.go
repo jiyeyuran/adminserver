@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/gocraft/dbr/v2"
 	"jhmeeting.com/adminserver/app"
 	"jhmeeting.com/adminserver/db"
 )
@@ -61,32 +60,36 @@ func (s ConferenceServer) History(c *gin.Context) {
 
 	selector := db.NewSelector(s.DB())
 
-	selector.Conditions = append(selector.Conditions, []db.Condition{
+	selector.Conditions = append(selector.Conditions, db.Condition{
 		Col: "uid",
 		Cmp: "eq",
 		Val: c.GetInt64("uid"),
 	})
 
 	if len(param.RoomName) > 0 {
-		selector.Conditions = append(selector.Conditions, []db.Condition{
+		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: "room_name",
 			Cmp: "eq",
 			Val: param.RoomName,
 		})
 	}	
 	if param.Range.StartTime.Valid {
-		selector.Conditions = append(selector.Conditions, []db.Condition{
+		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: "ctime",
 			Cmp: "gte",
 			Val: param.Range.StartTime,
 		})
 	}
 	if param.Range.EndTime.Valid {
-		selector.Conditions = append(selector.Conditions, []db.Condition{
+		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: "ctime",
 			Cmp: "lte",
 			Val: param.Range.EndTime,
 		})
+	}
+
+	selector.Orders = []db.Order{
+		{ Col: "id"},
 	}
 
 	confereces := []app.ConferenceInfo{}
