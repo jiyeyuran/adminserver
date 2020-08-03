@@ -45,8 +45,8 @@ func Setup(r *gin.Engine, app *app.App) {
 			conferenceGroup.POST("/conference/dispose", conferenceServer.Dispose)
 			conferenceGroup.POST("/conference/lock", conferenceServer.Lock)
 			conferenceGroup.POST("/conference/unlock", conferenceServer.Unlock)
-
 			conferenceGroup.POST("/conference/history", conferenceServer.History)
+			conferenceGroup.POST("/conference/action", conferenceServer.Action)
 		}
 	}
 }
