@@ -174,6 +174,20 @@ func (s *Selector) Where(builder dbr.Builder) *Selector {
 	return s
 }
 
+func (s *Selector) OrderDesc(col string) *Selector {
+	s.Orders = append(s.Orders, Order{
+		Col: col,
+		Asc: false,
+	})
+}
+
+func (s *Selector) OrderAsc(col string) *Selector {
+	s.Orders = append(s.Orders, Order{
+		Col: col,
+		Asc: true,
+	})
+}
+
 func (s Selector) Load(value interface{}) (count int, err error) {
 	return s.Stmt().Load(value)
 }
