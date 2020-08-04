@@ -9,6 +9,7 @@ import (
 // 通用的查询接口
 type Selector struct {
 	session dbr.SessionRunner
+	where   []dbr.Builder
 
 	Table      interface{} `json:"table,omitempty"`
 	JoinTables []JoinTable `json:"joinTables,omitempty"`
@@ -167,6 +168,12 @@ func (s *Selector) Paginate(page, perPage uint64) *Selector {
 	return s
 }
 
+func (s *Selector) Where(builder dbr.Builder) *Selector {
+	s.where = append(s.where, builder)
+
+	return s
+}
+
 func (s Selector) Load(value interface{}) (count int, err error) {
 	return s.Stmt().Load(value)
 }
@@ -246,10 +253,16 @@ func (s Selector) Stmt() *dbr.SelectStmt {
 		}
 	}
 
+	where := s.where[:]
+
 	for _, condition := range s.Conditions {
 		if builder := condition.Build(); builder != nil {
-			stmt.Where(builder)
+			where = append(where, builder)
 		}
+	}
+
+	for _, builder := range where {
+		stmt.Where(builder)
 	}
 
 	for _, col := range s.Groups {
