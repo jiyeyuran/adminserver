@@ -5,7 +5,12 @@ secret = "test"
 url = ""
 token = ""
 
+[redis]
+addr = "127.0.0.1:6379"
+password = "123456"
+db = 0
+
 [db]
 driver = "sqlite3"
-dsn = ":memory:"
+dsn = "easyrtc.db"
 timezone = ""

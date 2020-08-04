@@ -35,7 +35,7 @@ func (s RoomServer) Info(c *gin.Context) {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
-	c.JSON(200, room)
+	c.JSON(http.StatusOK, room)
 }
 
 func (s RoomServer) Create(c *gin.Context) {
@@ -51,12 +51,9 @@ func (s RoomServer) Create(c *gin.Context) {
 		Columns("uid", "room_name", "allow_anonymous", "config", "ctime").
 		Record(&roomInfo).ExecContext(c)
 	if err != nil {
-		c.AbortWithError(500, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(200, gin.H{
-		"id": roomInfo.Id,
-	})
 }
 
 func (s RoomServer) Delete(c *gin.Context) {
@@ -69,7 +66,7 @@ func (s RoomServer) Delete(c *gin.Context) {
 	uid := c.GetInt64("uid")
 	_, err := s.DB().DeleteFrom("room").Where("id=? and uid=?", param.ID, uid).ExecContext(c)
 	if err != nil {
-		c.AbortWithError(500, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 }
@@ -81,13 +78,14 @@ func (s RoomServer) Modify(c *gin.Context) {
 	}
 	uid := c.GetInt64("uid")
 	_, err := s.DB().Update("room").
+		Set("room_name", roomInfo.RoomName).
 		Set("participant_limits", roomInfo.ParticipantLimits).
 		Set("allow_anonymous", roomInfo.AllowAnonymous).
 		Set("config", roomInfo.Config).
 		Where("id=? and uid=?", roomInfo.Id, uid).
 		ExecContext(c)
 	if err != nil {
-		c.AbortWithError(500, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
 }
@@ -106,8 +104,7 @@ func (s RoomServer) List(c *gin.Context) {
 		Paginate(param.Page, param.PerPage).
 		OrderDesc("id").
 		LoadPage(&rooms)
-
-	c.JSON(200, result)
+	c.JSON(http.StatusOK, result)
 }
 
 func (s RoomServer) Token(c *gin.Context) {
