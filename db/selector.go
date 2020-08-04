@@ -179,6 +179,7 @@ func (s *Selector) OrderDesc(col string) *Selector {
 		Col: col,
 		Asc: false,
 	})
+	return s
 }
 
 func (s *Selector) OrderAsc(col string) *Selector {
@@ -186,6 +187,7 @@ func (s *Selector) OrderAsc(col string) *Selector {
 		Col: col,
 		Asc: true,
 	})
+	return s
 }
 
 func (s Selector) Load(value interface{}) (count int, err error) {
