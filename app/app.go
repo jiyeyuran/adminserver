@@ -112,7 +112,7 @@ func (app App) DB() *dbr.Session {
 
 func (app App) CreateToken(claims jwt.StandardClaims) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString(app.config.Secret)
+	tokenString, err := token.SignedString([]byte(app.config.Secret))
 	if err != nil {
 		panic(err)
 	}

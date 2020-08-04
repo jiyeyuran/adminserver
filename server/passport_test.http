@@ -1,0 +1,34 @@
+### 注册用户
+POST http://localhost:8004/admin/passport/signup
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "name": "141321",
+  "password": "123456",
+  "captcha_id": "123456",
+  "captcha_code": "123456"
+}
+
+### 用户登录
+POST http://localhost:8004/admin/passport/login
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+{
+  "name": "141319",
+  "password": "123456",
+  "captcha_id": "123456",
+  "captcha_code": "123456"
+}
+
+### 用户注销
+POST http://localhost:8004/admin/passport/logout
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+###
+

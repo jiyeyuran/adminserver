@@ -54,6 +54,9 @@ func (s RoomServer) Create(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
+	c.JSON(http.StatusOK, gin.H{
+		"id": roomInfo.Id,
+	})
 }
 
 func (s RoomServer) Delete(c *gin.Context) {

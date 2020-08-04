@@ -1,8 +1,8 @@
 package routes
 
 import (
-	"net/http"
-	"time"
+    "net/http"
+    "time"
 
     "github.com/dchest/captcha"
     "github.com/gin-gonic/gin"
@@ -19,7 +19,7 @@ func Setup(r *gin.Engine, app *app.App) {
         admin.GET("/captcha-id", handleCaptchaId)
         admin.GET("/captcha/:id", gin.WrapH(captcha.Server(captcha.StdWidth, captcha.StdHeight)))
 
-        passport := admin.Group("/passport", authMiddleware(app))
+        passport := admin.Group("/passport")
         {
             server := server.NewPassportServer(app)
             passport.POST("/signup", server.Signup)
@@ -27,7 +27,6 @@ func Setup(r *gin.Engine, app *app.App) {
             passport.POST("/logout", server.Logout)
         }
 
-        //roomGroup := admin.Group("/room")
         roomGroup := admin.Group("/room", authMiddleware(app))
         {
             roomServer := server.NewRoomServer(app)

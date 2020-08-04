@@ -1,109 +1,119 @@
 package server
 
 import (
-	"errors"
-	"fmt"
-	"time"
+    "errors"
+    "fmt"
+    "net/http"
+    "time"
 
-	"github.com/dchest/captcha"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/gin-gonic/gin"
-	"github.com/rs/xid"
-	"jhmeeting.com/adminserver/app"
+    "github.com/dgrijalva/jwt-go"
+    "github.com/gin-gonic/gin"
+    "github.com/rs/xid"
+    "jhmeeting.com/adminserver/app"
 )
 
 type PassportServer struct {
-	*app.App
+    *app.App
 }
 
 func NewPassportServer(app *app.App) *PassportServer {
-	return &PassportServer{
-		App: app,
-	}
+    return &PassportServer{
+        App: app,
+    }
 }
 
 func (s PassportServer) Signup(c *gin.Context) {
-	var param struct {
-		app.User
-		CaptchaId   string `json:"captcha_id,omitempty"`
-		CaptchaCode string `json:"captcha_code,omitempty"`
-	}
-	if c.BindJSON(&param) != nil {
-		return
-	}
+    var param struct {
+        app.User
+        CaptchaId   string `json:"captcha_id,omitempty"`
+        CaptchaCode string `json:"captcha_code,omitempty"`
+    }
+    if c.BindJSON(&param) != nil {
+        return
+    }
 
-	if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
-		c.AbortWithError(400, errors.New("图片验证码错误"))
-		return
-	}
+    /*if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
+    	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
+    	return
+    }*/
 
-	var err error
-	param.Password, err = app.HashPassword(param.Password)
-	if err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
+    var err error
+    param.Password, err = app.HashPassword(param.Password)
+    if err != nil {
+        c.AbortWithError(http.StatusInternalServerError, err)
+        return
+    }
 
-	param.Ctime = time.Now()
-	ctx := c.Request.Context()
+    user := app.User{}
+    err = s.DB().Select("*").From("users").
+        Where("name=?", param.Name).LoadOneContext(c, &user)
+    if user.Name == param.Name {
+        c.AbortWithError(http.StatusBadRequest, errors.New("用户名已存在！"))
+        return
+    }
 
-	_, err = s.DB().InsertInto("users").
-		Columns("name", "password", "ctime").
-		Record(&param.User).ExecContext(ctx)
-	if err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
-	token := s.CreateToken(jwt.StandardClaims{
-		Id:       xid.New().String(),
-		Audience: fmt.Sprintf("%d", param.Id),
-		Issuer:   app.CookieName,
-		IssuedAt: time.Now().Unix(),
-	})
-	param.Password = ""
-	c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
-	c.JSON(200, param.User)
+    param.Ctime = time.Now()
+    ctx := c.Request.Context()
+
+    _, err = s.DB().InsertInto("users").
+        Columns("name", "password", "ctime").
+        Record(&param.User).ExecContext(ctx)
+    if err != nil {
+        c.AbortWithError(http.StatusInternalServerError, err)
+        return
+    }
+    token := s.CreateToken(jwt.StandardClaims{
+        Id:       xid.New().String(),
+        Audience: fmt.Sprintf("%d", param.Id),
+        Issuer:   app.CookieName,
+        IssuedAt: time.Now().Unix(),
+    })
+    param.Password = ""
+    c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
+    c.JSON(http.StatusOK, gin.H{
+        "id": param.Id,
+    })
 }
 
 func (s PassportServer) Login(c *gin.Context) {
-	var param struct {
-		app.User
-		CaptchaId   string `json:"captcha_id,omitempty"`
-		CaptchaCode string `json:"captcha_code,omitempty"`
-	}
-	if c.BindJSON(&param) != nil {
-		return
-	}
+    var param struct {
+        app.User
+        CaptchaId   string `json:"captcha_id,omitempty"`
+        CaptchaCode string `json:"captcha_code,omitempty"`
+    }
+    if c.BindJSON(&param) != nil {
+        return
+    }
 
-	if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
-		c.AbortWithError(400, errors.New("图片验证码错误"))
-		return
-	}
+    /*if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
+    	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
+    	return
+    }*/
 
-	password, err := app.HashPassword(param.Password)
-	if err != nil {
-		c.AbortWithError(500, err)
-		return
-	}
-	param.Password = ""
+    errMsg := "用户名或密码错误"
+    user := app.User{}
+    err := s.DB().Select("*").From("users").
+        Where("name=?", param.Name).LoadOneContext(c, &user)
+    if err != nil {
+        c.AbortWithError(http.StatusBadRequest, errors.New(errMsg))
+        return
+    }
 
-	param.Id, _ = s.DB().Select("id").From("users").
-		Where("name=? and password=?", param.Name, password).ReturnInt64()
+    pass := app.CheckPasswordHash(param.Password, user.Password)
 
-	if param.Id == 0 {
-		c.AbortWithError(400, errors.New("用户名或密码错误"))
-		return
-	}
-	token := s.CreateToken(jwt.StandardClaims{
-		Id:       xid.New().String(),
-		Audience: fmt.Sprintf("%d", param.Id),
-		Issuer:   app.CookieName,
-		IssuedAt: time.Now().Unix(),
-	})
-	c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
-	c.JSON(200, param.User)
+    if !pass {
+        c.AbortWithError(http.StatusBadRequest, errors.New(errMsg))
+        return
+    }
+    token := s.CreateToken(jwt.StandardClaims{
+        Id:       xid.New().String(),
+        Audience: fmt.Sprintf("%d", param.Id),
+        Issuer:   app.CookieName,
+        IssuedAt: time.Now().Unix(),
+    })
+    c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
 }
 
 func (s PassportServer) Logout(c *gin.Context) {
-	c.SetCookie(app.CookieName, "", -1, "/", "", true, true)
+    c.SetCookie(app.CookieName, "", -1, "/", "", true, true)
 }

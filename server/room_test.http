@@ -5,7 +5,7 @@ Cache-Control: no-cache
 Content-Type: application/json
 
 {
-  "roomName": "测试房间2",
+  "roomName": "测试房间3",
   "participantLimits": 10,
   "allowAnonymous": false,
   "roomConfig": {
@@ -26,9 +26,10 @@ POST http://localhost:8004/admin/room/info
 Accept: */*
 Cache-Control: no-cache
 Content-Type: application/json
+Cookie: rtcadmin=test
 
 {
-  "id": 1
+  "id": 2
 }
 
 ### 修改房间
@@ -36,6 +37,7 @@ POST http://localhost:8004/admin/room/modify
 Accept: */*
 Cache-Control: no-cache
 Content-Type: application/json
+Cookie: rtcadmin=test
 
 {
   "id": 1,
@@ -60,6 +62,7 @@ POST http://localhost:8004/admin/room/list
 Accept: */*
 Cache-Control: no-cache
 Content-Type: application/json
+Cookie: rtcadmin=test
 
 {
   "page": 0,
@@ -71,6 +74,7 @@ POST http://localhost:8004/admin/room/delete
 Accept: */*
 Cache-Control: no-cache
 Content-Type: application/json
+Cookie: rtcadmin=test
 
 {
   "id": 1
