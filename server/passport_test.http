@@ -7,8 +7,8 @@ Content-Type: application/json
 {
   "name": "141321",
   "password": "123456",
-  "captcha_id": "123456",
-  "captcha_code": "123456"
+  "captcha_id": "XgxjDNvGFIuBjUYfWggb",
+  "captcha_code": "676832"
 }
 
 ### 用户登录
@@ -20,8 +20,8 @@ Content-Type: application/json
 {
   "name": "141319",
   "password": "123456",
-  "captcha_id": "123456",
-  "captcha_code": "123456"
+  "captcha_id": "XgxjDNvGFIuBjUYfWggb",
+  "captcha_code": "676832"
 }
 
 ### 用户注销

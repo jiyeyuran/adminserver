@@ -1,6 +1,7 @@
 package routes
 
 import (
+    "github.com/gin-contrib/static"
     "net/http"
     "time"
 
@@ -11,6 +12,8 @@ import (
 )
 
 func Setup(r *gin.Engine, app *app.App) {
+    r.Use(static.Serve("/", static.LocalFile("./www", true)))
+
     admin := r.Group("/admin")
     admin.Use(errorMiddleware, timeoutMiddleware(5*time.Second))
     {
