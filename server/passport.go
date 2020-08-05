@@ -2,13 +2,10 @@ package server
 
 import (
     "errors"
-    "fmt"
     "net/http"
     "time"
 
-    "github.com/dgrijalva/jwt-go"
     "github.com/gin-gonic/gin"
-    "github.com/rs/xid"
     "jhmeeting.com/adminserver/app"
 )
 
@@ -62,12 +59,7 @@ func (s PassportServer) Signup(c *gin.Context) {
         c.AbortWithError(http.StatusInternalServerError, err)
         return
     }
-    token := s.CreateToken(jwt.StandardClaims{
-        Id:       xid.New().String(),
-        Audience: fmt.Sprintf("%d", param.Id),
-        Issuer:   app.CookieName,
-        IssuedAt: time.Now().Unix(),
-    })
+    token := s.CreateToken(param.Id)
     param.Password = ""
     c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
     c.JSON(http.StatusOK, gin.H{
@@ -105,12 +97,7 @@ func (s PassportServer) Login(c *gin.Context) {
         c.AbortWithError(http.StatusBadRequest, errors.New(errMsg))
         return
     }
-    token := s.CreateToken(jwt.StandardClaims{
-        Id:       xid.New().String(),
-        Audience: fmt.Sprintf("%d", param.Id),
-        Issuer:   app.CookieName,
-        IssuedAt: time.Now().Unix(),
-    })
+    token := s.CreateToken(user.Id)
     c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
 }
 

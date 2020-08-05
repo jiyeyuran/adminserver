@@ -64,12 +64,12 @@ func authMiddleware(gapp *app.App) func(c *gin.Context) {
 		if tokenString == gapp.Config().Secret {
 			return
 		}
-		claims, err := gapp.ParseToken(tokenString)
+		userID, err := gapp.ParseToken(tokenString)
 		if err != nil {
 			c.AbortWithError(http.StatusNonAuthoritativeInfo, err)
 			return
 		}
-		uid, _ := strconv.ParseInt(claims.Audience, 10, 64)
+		uid, _ := strconv.ParseInt(userID, 10, 64)
 		if uid <= 0 {
 			c.AbortWithError(http.StatusNonAuthoritativeInfo, errors.New("bad token"))
 			return
