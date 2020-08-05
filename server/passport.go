@@ -62,7 +62,7 @@ func (s PassportServer) Signup(c *gin.Context) {
     token := s.CreateToken(param.Id)
     param.Password = ""
     c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
-    c.JSON(http.StatusOK, gin.H{
+    c.AbortWithStatusJSON(http.StatusOK, gin.H{
         "id": param.Id,
     })
 }

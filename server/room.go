@@ -35,7 +35,7 @@ func (s RoomServer) Info(c *gin.Context) {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
-	c.JSON(http.StatusOK, room)
+	c.AbortWithStatusJSON(http.StatusOK, room)
 }
 
 func (s RoomServer) Create(c *gin.Context) {
@@ -54,7 +54,7 @@ func (s RoomServer) Create(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
+	c.AbortWithStatusJSON(http.StatusOK, gin.H{
 		"id": roomInfo.Id,
 	})
 }
@@ -81,7 +81,6 @@ func (s RoomServer) Modify(c *gin.Context) {
 	}
 	uid := c.GetInt64("uid")
 	_, err := s.DB().Update("room").
-		Set("room_name", roomInfo.RoomName).
 		Set("participant_limits", roomInfo.ParticipantLimits).
 		Set("allow_anonymous", roomInfo.AllowAnonymous).
 		Set("config", roomInfo.Config).
@@ -107,7 +106,7 @@ func (s RoomServer) List(c *gin.Context) {
 		Paginate(param.Page, param.PerPage).
 		OrderDesc("id").
 		LoadPage(&rooms)
-	c.JSON(http.StatusOK, result)
+	c.AbortWithStatusJSON(http.StatusOK, result)
 }
 
 func (s RoomServer) Token(c *gin.Context) {

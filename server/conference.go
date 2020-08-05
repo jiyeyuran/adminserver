@@ -100,7 +100,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
-	c.JSON(200, result)
+	c.AbortWithStatusJSON(200, result)
 }
 
 //Action 会议室事件
@@ -125,7 +125,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
-		c.JSON(200, roomInfo)
+		c.AbortWithStatusJSON(200, roomInfo)
 	case MUC_ROOM_RECORDING_START:
 	case MUC_ROOM_RECORDING_STOP:
 		// TODO: 保存req.RecordingFile
