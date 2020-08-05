@@ -1,6 +1,8 @@
 package server
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"jhmeeting.com/adminserver/app"
 	"jhmeeting.com/adminserver/db"
@@ -72,7 +74,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 			Cmp: "eq",
 			Val: param.RoomName,
 		})
-	}	
+	}
 	if param.Range.StartTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: "ctime",
@@ -89,7 +91,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 	}
 
 	selector.Orders = []db.Order{
-		{ Col: "id"},
+		{Col: "id"},
 	}
 
 	confereces := []app.ConferenceInfo{}
@@ -103,6 +105,29 @@ func (s ConferenceServer) History(c *gin.Context) {
 
 //Action 会议室事件
 func (s ConferenceServer) Action(c *gin.Context) {
-	// TODO: 监听事件
-	
+	req := ActionRequest{}
+	if c.BindJSON(&req) != nil {
+		return
+	}
+
+	switch req.Action {
+	case MUC_ROOM_PRE_CREATE:
+	case MUC_ROOM_CREATED:
+	case MUC_OCCUPANT_PRE_JOIN:
+	case MUC_OCCUPANT_JOINED:
+	case MUC_OCCUPANT_LEFT:
+	case MUC_ROOM_DESTROYED:
+	case MUC_ROOM_SECRET:
+	case MUC_ROOM_INFO:
+		var roomInfo app.RoomInfo
+		err := s.DB().Select("*").From("room").Where("room_name=?", req.Room).LoadOne(&roomInfo)
+		if err != nil {
+			c.AbortWithError(http.StatusNotFound, err)
+			return
+		}
+		c.JSON(200, roomInfo)
+	case MUC_ROOM_RECORDING_START:
+	case MUC_ROOM_RECORDING_STOP:
+		// TODO: 保存req.RecordingFile
+	}
 }
