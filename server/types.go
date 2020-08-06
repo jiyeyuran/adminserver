@@ -34,3 +34,21 @@ type RecordingFile struct {
 	Streaming string    `json:"streaming,omitempty"` // 推流地址
 	Ctime     time.Time `json:"ctime,omitempty"`     // 创建时间
 }
+
+type RoomTokenRequest struct {
+	RoomName  string   `json:"roomName,omitempty" binding:"required"`
+	ExpiresAt int64    `json:"expiresAt,omitempty"`
+	Context   *Context `json:"context,omitempty"`
+	Anonymous bool     `json:"anonymous,omitempty"`
+}
+
+type Context struct {
+	User   *ContextUserInfo `json:"user,omitempty"`
+	Callee *ContextUserInfo `json:"callee,omitempty"`
+}
+
+type ContextUserInfo struct {
+	Id        string `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	AvatarUrl string `json:"avatarUrl,omitempty"`
+}
