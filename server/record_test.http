@@ -1,18 +1,3 @@
-### 创建视频回看
-POST http://localhost:8004/admin/record/create
-Accept: */*
-Cache-Control: no-cache
-Content-Type: application/json
-Cookie: rtcadmin=test
-
-{
-  "id": 1,
-  "roomName": "张奇141319",
-  "duration": 141319,
-  "size": 141319,
-  "downloadUrl": "http://127.0.0.0.1/asdasda/141319"
-}
-
 ### 获取视频回看
 POST http://localhost:8004/admin/record/info
 Accept: */*

@@ -1,12 +1,10 @@
 package server
 
 import (
-    "net/http"
-    "time"
-
     "github.com/gin-gonic/gin"
     "jhmeeting.com/adminserver/app"
     "jhmeeting.com/adminserver/db"
+    "net/http"
 )
 
 type RecordServer struct {
@@ -35,26 +33,6 @@ func (s RecordServer) Info(c *gin.Context) {
         return
     }
     c.AbortWithStatusJSON(http.StatusOK, record)
-}
-
-func (s RecordServer) Create(c *gin.Context) {
-    recordInfo := app.RecordInfo{}
-    if c.BindJSON(&recordInfo) != nil {
-        return
-    }
-
-    recordInfo.Ctime = time.Now()
-
-    _, err := s.DB().InsertInto(app.RecordTableName).
-        Columns(app.RecordIdCol, app.RecordRoomNameCol, app.RecordCtimeCol, app.RecordDurationCol, app.RecordSizeCol, app.RecordUrlCol).
-        Record(&recordInfo).ExecContext(c)
-    if err != nil {
-        c.AbortWithError(http.StatusInternalServerError, err)
-        return
-    }
-    c.AbortWithStatusJSON(http.StatusOK, gin.H{
-        "id": recordInfo.Id,
-    })
 }
 
 // 删除
