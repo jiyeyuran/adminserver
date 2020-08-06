@@ -4,6 +4,7 @@ import (
     "database/sql/driver"
     "encoding/json"
     "errors"
+    "jhmeeting.com/adminserver/db"
     "time"
 )
 
@@ -72,7 +73,7 @@ type ConferenceInfo struct {
     LockPassword    string    `json:"lockPassword,omitempty"`                      // 进入密码
     Locked          bool      `json:"locked,omitempty"`                            // 是否锁定
     Ctime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
-    Etime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
+    Etime           db.NullTime `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
 }
 
 //*****************************************会议回看定义*********************************************************/
