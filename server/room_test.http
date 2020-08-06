@@ -80,4 +80,6 @@ Cookie: rtcadmin=test
   "id": 1
 }
 
-###
+### 获取 token
+POST http://localhost:8004/admin/room/token
+

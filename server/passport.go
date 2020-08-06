@@ -31,8 +31,8 @@ func (s PassportServer) Signup(c *gin.Context) {
     }
 
     if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
-    	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
-    	return
+        c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
+        return
     }
 
     var err error
@@ -79,8 +79,8 @@ func (s PassportServer) Login(c *gin.Context) {
     }
 
     if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
-    	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
-    	return
+        c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
+        return
     }
 
     errMsg := "用户名或密码错误"
@@ -105,4 +105,67 @@ func (s PassportServer) Login(c *gin.Context) {
 
 func (s PassportServer) Logout(c *gin.Context) {
     c.SetCookie(app.CookieName, "", -1, "/", "", false, true)
+}
+
+// 获取账户信息
+func (s PassportServer) Info(c *gin.Context) {
+    // 获取正在登陆的信息
+    uid := c.GetInt64("uid")
+    user := app.User{}
+    err := s.DB().Select("*").From("users").
+        Where("id=?", uid).LoadOneContext(c, &user)
+    if err != nil {
+        c.AbortWithError(http.StatusBadRequest, err)
+        return
+    }
+
+    user.Password = ""
+    c.AbortWithStatusJSON(http.StatusOK, user)
+}
+
+// 修改账户信息
+func (s PassportServer) Modify(c *gin.Context) {
+    var param struct {
+        app.User
+        NewPass string `json:"newpass,omitempty"`
+    }
+    if c.BindJSON(&param) != nil {
+        return
+    }
+
+    uid := c.GetInt64("uid")
+    // 检验原密码
+    user := app.User{}
+    err := s.DB().Select("*").From("users").
+        Where("id=?", uid).LoadOneContext(c, &user)
+    if err != nil {
+        c.AbortWithError(http.StatusBadRequest, err)
+        return
+    }
+    pass := app.CheckPasswordHash(param.Password, user.Password)
+    if !pass {
+        c.AbortWithError(http.StatusBadRequest, errors.New("原密码错误"))
+        return
+    }
+
+    // 通过，将新密码变为 hash
+    newPassHash, err := app.HashPassword(param.NewPass)
+    if err != nil {
+        c.AbortWithError(http.StatusInternalServerError, err)
+        return
+    }
+
+    // 更新到数据库中
+    _, err = s.DB().Update("users").
+        Set("password", newPassHash).
+        Set("display_name", param.DisplayName).
+        Set("company", param.Company).
+        Set("phone", param.Phone).
+        Set("email", param.Email).
+        Where("id=?", uid).
+        ExecContext(c)
+    if err != nil {
+        c.AbortWithError(http.StatusInternalServerError, err)
+        return
+    }
 }

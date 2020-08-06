@@ -30,6 +30,8 @@ func Setup(r *gin.Engine, app *app.App) {
             passport.POST("/signup", server.Signup)
             passport.POST("/login", server.Login)
             passport.POST("/logout", server.Logout)
+            passport.POST("/info", authMiddleware(app), server.Info)
+            passport.POST("/modify", authMiddleware(app), server.Modify)
         }
 
         roomGroup := admin.Group("/room", authMiddleware(app))

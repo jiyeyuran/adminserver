@@ -10,10 +10,14 @@ import (
 
 // 用户
 type User struct {
-    Id       int64     `json:"id,omitempty"`
-    Name     string    `json:"name,omitempty"`
-    Password string    `json:"password,omitempty"`
-    Ctime    time.Time `json:"ctime,omitempty"`
+    Id          int64     `json:"id,omitempty"`       // id
+    Name        string    `json:"name,omitempty"`     // 登录名
+    Password    string    `json:"password,omitempty"` // 密码
+    DisplayName string    `json:"displayName"`        // 姓名
+    Email       string    `json:"email"`              // 邮箱
+    Phone       string    `json:"phone"`              // 手机号码
+    Company     string    `json:"company"`            // 公司名称
+    Ctime       time.Time `json:"ctime,omitempty"`    // 创建时间
 }
 
 // 房间信息
@@ -62,17 +66,17 @@ func (config *RoomConfig) Scan(src interface{}) error {
 
 // 会议室信息，会议室表示正在开会的房间
 type ConferenceInfo struct {
-    Id              int64     `json:"id,omitempty"`
-    Uid             int64     `json:"uid,omitempty" sql:"index:ci_uid"`            // 会议uid
-    RoomName        string    `json:"roomName,omitempty" sql:"index:ci_room_name"` // 房间名称
-    Participants    int       `json:"participants,omitempty"`                      // 当前人数
-    MaxParticipants int       `json:"maxParticipants,omitempty"`                   // 最高人数
-    IsRecording     bool      `json:"isRecording,omitempty"`                       // 是否正在录制
-    IsStreaming     bool      `json:"isStreaming,omitempty"`                       // 是否正在直播
-    ApiEnabled      bool      `json:"apiEnabled,omitempty"`                        // 是否是使用API接入的会议室
-    LockPassword    string    `json:"lockPassword,omitempty"`                      // 进入密码
-    Locked          bool      `json:"locked,omitempty"`                            // 是否锁定
-    Ctime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
+    Id              int64       `json:"id,omitempty"`
+    Uid             int64       `json:"uid,omitempty" sql:"index:ci_uid"`            // 会议uid
+    RoomName        string      `json:"roomName,omitempty" sql:"index:ci_room_name"` // 房间名称
+    Participants    int         `json:"participants,omitempty"`                      // 当前人数
+    MaxParticipants int         `json:"maxParticipants,omitempty"`                   // 最高人数
+    IsRecording     bool        `json:"isRecording,omitempty"`                       // 是否正在录制
+    IsStreaming     bool        `json:"isStreaming,omitempty"`                       // 是否正在直播
+    ApiEnabled      bool        `json:"apiEnabled,omitempty"`                        // 是否是使用API接入的会议室
+    LockPassword    string      `json:"lockPassword,omitempty"`                      // 进入密码
+    Locked          bool        `json:"locked,omitempty"`                            // 是否锁定
+    Ctime           time.Time   `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
     Etime           db.NullTime `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
 }
 
