@@ -74,3 +74,26 @@ type ConferenceInfo struct {
 	Ctime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
 	Etime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
 }
+
+//*****************************************会议回看定义*********************************************************/
+// 会议回看信息
+type RecordInfo struct {
+	Id       int64     `json:"id,omitempty"`          // 会议室id
+	RoomName string    `json:"roomName,omitempty"`    // 会议室名称
+	Ctime    time.Time `json:"ctime,omitempty"`       // 开始时间
+	Duration int64     `json:"duration,omitempty"`    // 录制时长
+	Size     int64     `json:"size,omitempty"`         // 文件大小
+	DownloadUrl string `json:"downloadUrl,omitempty"` // 录像 url 地址
+}
+
+// 会议回看表对应的字符串
+const (
+	RecordTableName = "record"
+	RecordIdCol = "id"
+	RecordRoomNameCol = "room_name"
+	RecordCtimeCol = "ctime"
+	RecordDurationCol = "duration"
+	RecordSizeCol = "size"
+	RecordUrlCol = "download_url"
+	WhereRecordID = "id=?"
+)

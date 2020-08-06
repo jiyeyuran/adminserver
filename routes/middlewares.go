@@ -41,7 +41,7 @@ func errorMiddleware(c *gin.Context) {
 		if status <= 0 {
 			status = 500
 		}
-		c.JSON(status, err.Last())
+		c.AbortWithStatusJSON(status, err.Last())
 	}
 }
 

@@ -52,6 +52,15 @@ func Setup(r *gin.Engine, app *app.App) {
             conferenceGroup.POST("/history", conferenceServer.History)
             conferenceGroup.POST("/action", conferenceServer.Action)
         }
+
+        recordGroup := admin.Group("/record", authMiddleware(app))
+        {
+            recordServer := server.NewRecordServer(app)
+            recordGroup.POST("/info", recordServer.Info)
+            recordGroup.POST("/list", recordServer.List)
+            recordGroup.POST("/create", recordServer.Create)
+            recordGroup.POST("/delete", recordServer.Delete)
+        }
     }
 }
 
