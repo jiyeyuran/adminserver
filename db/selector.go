@@ -168,8 +168,8 @@ func (s *Selector) Paginate(page, perPage uint64) *Selector {
 	return s
 }
 
-func (s *Selector) Where(builder dbr.Builder) *Selector {
-	s.where = append(s.where, builder)
+func (s *Selector) Where(builders ...dbr.Builder) *Selector {
+	s.where = append(s.where, builders...)
 
 	return s
 }

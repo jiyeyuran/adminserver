@@ -17,6 +17,7 @@ const (
 
 type ActionRequest struct {
 	Action       string         `json:"action,omitempty"`       // 事件名
+	ConferenceId int64          `json:"conferenceId,omitempty"` // 会议室ID
 	Room         string         `json:"room,omitempty"`         // 房间名
 	Nick         string         `json:"nick,omitempty"`         // 参会者昵称
 	Jid          string         `json:"jid,omitempty"`          // 参会者ID

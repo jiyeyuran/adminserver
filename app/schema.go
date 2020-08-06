@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"time"
+
+	"jhmeeting.com/adminserver/db"
 )
 
 // 用户
@@ -61,39 +63,41 @@ func (config *RoomConfig) Scan(src interface{}) error {
 
 // 会议室信息，会议室表示正在开会的房间
 type ConferenceInfo struct {
-	Id              int64     `json:"id,omitempty"`
-	Uid             int64     `json:"uid,omitempty" sql:"index:ci_uid"`            // 会议uid
-	RoomName        string    `json:"roomName,omitempty" sql:"index:ci_room_name"` // 房间名称
-	Participants    int       `json:"participants,omitempty"`                      // 当前人数
-	MaxParticipants int       `json:"maxParticipants,omitempty"`                   // 最高人数
-	IsRecording     bool      `json:"isRecording,omitempty"`                       // 是否正在录制
-	IsStreaming     bool      `json:"isStreaming,omitempty"`                       // 是否正在直播
-	ApiEnabled      bool      `json:"apiEnabled,omitempty"`                        // 是否是使用API接入的会议室
-	LockPassword    string    `json:"lockPassword,omitempty"`                      // 进入密码
-	Locked          bool      `json:"locked,omitempty"`                            // 是否锁定
-	Ctime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
-	Etime           time.Time `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
+	Id              int64       `json:"id,omitempty"`
+	Uid             int64       `json:"uid,omitempty" sql:"index:ci_uid"`            // 会议uid
+	RoomName        string      `json:"roomName,omitempty" sql:"index:ci_room_name"` // 房间名称
+	Participants    int         `json:"participants,omitempty"`                      // 当前人数
+	MaxParticipants int         `json:"maxParticipants,omitempty"`                   // 最高人数
+	IsRecording     bool        `json:"isRecording,omitempty"`                       // 是否正在录制
+	IsStreaming     bool        `json:"isStreaming,omitempty"`                       // 是否正在直播
+	ApiEnabled      bool        `json:"apiEnabled,omitempty"`                        // 是否是使用API接入的会议室
+	LockPassword    string      `json:"lockPassword,omitempty"`                      // 进入密码
+	Locked          bool        `json:"locked,omitempty"`                            // 是否锁定
+	Ctime           time.Time   `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 开始时间
+	Etime           db.NullTime `json:"ctime,omitempty" sql:"index:ci_ctime"`        // 结束时间
 }
 
 //*****************************************会议回看定义*********************************************************/
 // 会议回看信息
 type RecordInfo struct {
-	Id       int64     `json:"id,omitempty"`          // 会议室id
-	RoomName string    `json:"roomName,omitempty"`    // 会议室名称
-	Ctime    time.Time `json:"ctime,omitempty"`       // 开始时间
-	Duration int64     `json:"duration,omitempty"`    // 录制时长
-	Size     int64     `json:"size,omitempty"`         // 文件大小
-	DownloadUrl string `json:"downloadUrl,omitempty"` // 录像 url 地址
+	Id           int64     `json:"id,omitempty"`
+	ConferenceId int64     `json:"conferenceId,omitempty"` // 会议室id
+	RoomName     string    `json:"roomName,omitempty"`     // 会议室名称
+	Duration     int64     `json:"duration,omitempty"`     // 录制时长
+	Size         int64     `json:"size,omitempty"`         // 文件大小
+	DownloadUrl  string    `json:"downloadUrl,omitempty"`  // 录像 url 地址
+	StreamingUrl string    `json:"streamingUrl,omitempty"` // 推流 url 地址
+	Ctime        time.Time `json:"ctime,omitempty"`        // 开始时间
 }
 
 // 会议回看表对应的字符串
 const (
-	RecordTableName = "record"
-	RecordIdCol = "id"
+	RecordTableName   = "record"
+	RecordIdCol       = "id"
 	RecordRoomNameCol = "room_name"
-	RecordCtimeCol = "ctime"
+	RecordCtimeCol    = "ctime"
 	RecordDurationCol = "duration"
-	RecordSizeCol = "size"
-	RecordUrlCol = "download_url"
-	WhereRecordID = "id=?"
+	RecordSizeCol     = "size"
+	RecordUrlCol      = "download_url"
+	WhereRecordID     = "id=?"
 )
