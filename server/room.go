@@ -119,5 +119,6 @@ func (s RoomServer) List(c *gin.Context) {
 }
 
 func (s RoomServer) Token(c *gin.Context) {
+	// JSON Body: see RoomTokenRequest
 	s.APIRoute(c, "/api/conference/token")
 }

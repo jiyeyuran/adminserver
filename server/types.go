@@ -17,6 +17,7 @@ const (
 
 type ActionRequest struct {
 	Action       string         `json:"action,omitempty"`       // 事件名
+	ConferenceId int64          `json:"conferenceId,omitempty"` // 会议室ID
 	Room         string         `json:"room,omitempty"`         // 房间名
 	Nick         string         `json:"nick,omitempty"`         // 参会者昵称
 	Jid          string         `json:"jid,omitempty"`          // 参会者ID
@@ -33,4 +34,22 @@ type RecordingFile struct {
 	Duration  int64     `json:"duration,omitempty"`  // 房间名
 	Streaming string    `json:"streaming,omitempty"` // 推流地址
 	Ctime     time.Time `json:"ctime,omitempty"`     // 创建时间
+}
+
+type RoomTokenRequest struct {
+	RoomName  string   `json:"roomName,omitempty" binding:"required"`
+	ExpiresAt int64    `json:"expiresAt,omitempty"`
+	Context   *Context `json:"context,omitempty"`
+	Anonymous bool     `json:"anonymous,omitempty"`
+}
+
+type Context struct {
+	User   *ContextUserInfo `json:"user,omitempty"`
+	Callee *ContextUserInfo `json:"callee,omitempty"`
+}
+
+type ContextUserInfo struct {
+	Id        string `json:"id,omitempty"`
+	Name      string `json:"name,omitempty"`
+	AvatarUrl string `json:"avatarUrl,omitempty"`
 }
