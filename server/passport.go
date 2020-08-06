@@ -2,6 +2,7 @@ package server
 
 import (
     "errors"
+    "github.com/dchest/captcha"
     "net/http"
     "time"
 
@@ -29,10 +30,10 @@ func (s PassportServer) Signup(c *gin.Context) {
         return
     }
 
-    /*if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
+    if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
     	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
     	return
-    }*/
+    }
 
     var err error
     param.Password, err = app.HashPassword(param.Password)
@@ -77,10 +78,10 @@ func (s PassportServer) Login(c *gin.Context) {
         return
     }
 
-    /*if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
+    if !captcha.VerifyString(param.CaptchaId, param.CaptchaCode) {
     	c.AbortWithError(http.StatusBadRequest, errors.New("图片验证码错误"))
     	return
-    }*/
+    }
 
     errMsg := "用户名或密码错误"
     user := app.User{}
@@ -98,9 +99,10 @@ func (s PassportServer) Login(c *gin.Context) {
         return
     }
     token := s.CreateToken(user.Id)
-    c.SetCookie(app.CookieName, token, 0, "/", "", true, true)
+    // secure 为 true 则仅允许 ssl 和 https 协议传输
+    c.SetCookie(app.CookieName, token, 0, "/", "", false, true)
 }
 
 func (s PassportServer) Logout(c *gin.Context) {
-    c.SetCookie(app.CookieName, "", -1, "/", "", true, true)
+    c.SetCookie(app.CookieName, "", -1, "/", "", false, true)
 }

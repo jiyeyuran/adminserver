@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -47,8 +48,16 @@ func (s RoomServer) Create(c *gin.Context) {
 	roomInfo.Uid = c.GetInt64("uid")
 	roomInfo.Ctime = time.Now()
 
-	_, err := s.DB().InsertInto("room").
-		Columns("uid", "room_name", "allow_anonymous", "config", "ctime").
+	room := app.RoomInfo{}
+	err := s.DB().Select("*").From("room").
+		Where("uid=? and name=?", roomInfo.Uid, roomInfo.RoomName).LoadOneContext(c, &room)
+	if room.RoomName == roomInfo.RoomName {
+		c.AbortWithError(http.StatusBadRequest, errors.New("会议名已存在！"))
+		return
+	}
+
+	_, err = s.DB().InsertInto("room").
+		Columns("uid", "participant_limits", "room_name", "allow_anonymous", "config", "ctime").
 		Record(&roomInfo).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

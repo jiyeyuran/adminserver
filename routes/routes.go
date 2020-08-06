@@ -12,6 +12,8 @@ import (
 )
 
 func Setup(r *gin.Engine, app *app.App) {
+    gin.SetMode(gin.DebugMode)
+
     r.Use(static.Serve("/", static.LocalFile("./www", true)))
 
     admin := r.Group("/admin")
