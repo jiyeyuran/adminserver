@@ -227,6 +227,9 @@ func (app App) APIRoute(c *gin.Context, apiPath string) {
 }
 
 func newRedis(config RedisConfig) redis.UniversalClient {
+	if len(config.Addr) == 0 {
+		return nil
+	}
 	redisCli := redis.NewUniversalClient(&redis.UniversalOptions{
 		Addrs:    config.Addr,
 		Password: config.Password,
