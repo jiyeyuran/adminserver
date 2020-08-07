@@ -5,15 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go.uber.org/zap"
 	"io/ioutil"
-	"jhmeeting.com/adminserver/util"
 	"log"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
 	"time"
+
+	"go.uber.org/zap"
+	"jhmeeting.com/adminserver/util"
 
 	"github.com/rs/xid"
 
@@ -26,6 +27,7 @@ import (
 )
 
 const CookieName = "rtcadmin"
+
 var logger = util.GetLogger()
 
 type App struct {
@@ -58,6 +60,8 @@ type RedisConfig struct {
 }
 
 func NewApp(configLocations ...string) *App {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	viper.SetConfigName("config") // name of config file (without extension)
 
 	for _, configLocation := range configLocations {

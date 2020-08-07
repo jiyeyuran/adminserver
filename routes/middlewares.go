@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -34,9 +35,8 @@ func errorMiddleware(c *gin.Context) {
 	c.Next()
 
 	if err := c.Errors; err != nil {
-		if strings.HasPrefix(c.ContentType(), "application/json") {
-			// log.Error().Err(err.Last()).Send()
-		}
+		log.Printf("[EROR] %s", err.Last().Error())
+
 		status := c.Writer.Status()
 		if status <= 0 {
 			status = 500
