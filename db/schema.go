@@ -65,7 +65,7 @@ func createDatabase(session *dbr.Session, dbName string) (err error) {
 // CreateDatabase 如果表不存在，则创建
 func CreateTable(session *dbr.Session, table string, schema interface{}) (err error) {
 	baseDialect := getBaseDialect(session)
-	rows, err := session.Query("select * from " + session.QuoteIdent(table) + " where 1 != 1")
+	rows, err := session.Query("SELECT * FROM " + session.QuoteIdent(table) + " WHERE 1 != 1")
 	if err != nil {
 		createSQL := schema2CreateTableSQL(baseDialect, table, schema)
 		_, err = session.InsertBySql(createSQL).Exec()
@@ -150,12 +150,12 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 	buf.WriteString(" ")
 
 	sqlTag := tag.Get("sql")
-	pairs := parseTags2Map(sqlTag)
+	tags := parseTags2Map(sqlTag)
 	defaultLen, defaultVal := "", ""
 
 	if strings.ToLower(field.Name) == "id" &&
-		len(pairs["index"]) == 0 &&
-		kindType(kind) == kindType_Number {
+		len(tags["index"]) == 0 &&
+		kindType(kind) == kindType_Integer {
 		pKeySQL := "PRIMARY KEY"
 
 		switch d {
@@ -172,7 +172,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		return buf.String()
 	}
 
-	if typ := pairs["type"]; len(typ) > 0 {
+	if typ := tags["type"]; len(typ) > 0 {
 		buf.WriteString(strings.ToUpper(typ))
 	} else {
 		switch kindType(kind) {
@@ -210,7 +210,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		}
 	}
 
-	if length := pairs["length"]; len(length) > 0 {
+	if length := tags["length"]; len(length) > 0 {
 		buf.WriteString("(" + length + ")")
 	} else if len(defaultLen) > 0 {
 		buf.WriteString(defaultLen)
@@ -218,11 +218,11 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 
 	buf.WriteString(" ")
 
-	if isUnsignedNumber(kind) {
+	if isUnsignedNumber(kind) || tags["unsigned"] == "true" {
 		buf.WriteString("UNSIGNED ")
 	}
 
-	if strings.ToLower(field.Name) == "id" && len(pairs["index"]) == 0 {
+	if strings.ToLower(field.Name) == "id" && len(tags["index"]) == 0 {
 		buf.WriteString("PRIMARY KEY")
 
 		return buf.String()
@@ -235,7 +235,7 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		buf.WriteString("NOT NULL")
 	}
 
-	if def, ok := pairs["default"]; ok {
+	if def, ok := tags["default"]; ok {
 		buf.WriteString(" DEFAULT " + def)
 	} else if len(defaultVal) > 0 {
 		buf.WriteString(" DEFAULT " + defaultVal)
@@ -316,10 +316,9 @@ func parseTags(sqlTag string) (tags []tagInfo) {
 
 	for _, tagField := range strings.Fields(sqlTag) {
 		parts := strings.SplitN(tagField, ":", 2)
-		if len(parts) != 2 {
-			panic(fmt.Sprintf("unknonw tag: %s", sqlTag))
+		if len(parts) < 2 {
+			parts = append(parts, "true")
 		}
-
 		tags = append(tags, tagInfo{
 			Key: strings.TrimSpace(parts[0]),
 			Val: strings.TrimSpace(parts[1]),
@@ -374,7 +373,6 @@ func listIndexTags(schema interface{}) (tags []*indexTag) {
 }
 
 const (
-	kindType_Number  = "number"
 	kindType_Integer = "integer"
 	kindType_Float   = "float"
 	kindType_String  = "string"
@@ -410,11 +408,11 @@ func isUnsignedNumber(kind reflect.Kind) bool {
 		kind == reflect.Uint64
 }
 
-// isDateTimeType 检查类型是否是时间类型
+// isDateTimeType check if typ is datetime. typ should be struct type
 func isDateTimeType(typ reflect.Type) bool {
-	return typ.Kind() == reflect.Struct && (typ == reflect.TypeOf(dbr.NullTime{}) ||
+	return typ == reflect.TypeOf(dbr.NullTime{}) ||
 		typ == reflect.TypeOf(NullTime{}) ||
-		typ == reflect.TypeOf(time.Time{}))
+		typ == reflect.TypeOf(time.Time{})
 }
 
 func fieldType(field reflect.StructField) reflect.Type {
