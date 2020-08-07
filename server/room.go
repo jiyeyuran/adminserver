@@ -36,7 +36,7 @@ func (s RoomServer) Info(c *gin.Context) {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
 	}
-	c.AbortWithStatusJSON(http.StatusOK, room)
+	c.JSON(http.StatusOK, room)
 }
 
 func (s RoomServer) Create(c *gin.Context) {
@@ -63,7 +63,7 @@ func (s RoomServer) Create(c *gin.Context) {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"id": roomInfo.Id,
 	})
 }
@@ -115,7 +115,7 @@ func (s RoomServer) List(c *gin.Context) {
 		Paginate(param.Page, param.PerPage).
 		OrderDesc("id").
 		LoadPage(&rooms)
-	c.AbortWithStatusJSON(http.StatusOK, result)
+	c.JSON(http.StatusOK, result)
 }
 
 func (s RoomServer) Token(c *gin.Context) {

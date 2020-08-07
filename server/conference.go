@@ -126,7 +126,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 		c.AbortWithError(500, err)
 		return
 	}
-	c.AbortWithStatusJSON(200, result)
+	c.JSON(200, result)
 }
 
 //Action 会议室事件
@@ -149,7 +149,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
-		c.AbortWithStatusJSON(200, roomInfo)
+		c.JSON(200, roomInfo)
 
 	case MUC_ROOM_PRE_CREATE:
 		uid, _ := s.DB().Select("id").From("room").Where("room_name=?", req.Room).ReturnInt64()

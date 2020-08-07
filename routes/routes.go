@@ -69,7 +69,7 @@ func Setup(r *gin.Engine, app *app.App) {
 }
 
 func handleCaptchaId(c *gin.Context) {
-	c.AbortWithStatusJSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"id": captcha.NewLen(6),
 	})
 }
