@@ -1,8 +1,8 @@
 port = 8004
 secret = "test"
-httpsPort = 1443
-certPath = "./ssl/vc.easyrts.com.crt"
-keyPath = "./ssl/vc.easyrts.com.key"
+# httpsPort = 1443
+# certPath = "./ssl/vc.easyrts.com.crt"
+# keyPath = "./ssl/vc.easyrts.com.key"
 
 [api]
 url = "https://vc.easyrts.com/"
