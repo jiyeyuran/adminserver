@@ -1,9 +1,12 @@
 port = 8004
 secret = "test"
+httpsPort = 1443
+certPath = "./ssl/vc.easyrts.com.crt"
+keyPath = "./ssl/vc.easyrts.com.key"
 
 [api]
-url = ""
-token = ""
+url = "https://vc.easyrts.com/"
+token = "tfnysji2oduiol5e"
 
 [redis]
 addr = "127.0.0.1:6379"
