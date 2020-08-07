@@ -2,7 +2,7 @@
 const TerserPlugin = require("terser-webpack-plugin");
 const webpack = require('webpack')
 module.exports = {
-    // publicPath: "../", // 基本路径
+    publicPath: "/admin", // 基本路径
     outputDir: "www", // 输出文件目录
     lintOnSave: true, // eslint-loader 是否在保存的时候检查
     assetsDir: "static", //放置生成的静态资源 (js、css、img、fonts) 的 (相对于 outputDir 的) 目录。
@@ -37,8 +37,14 @@ module.exports = {
         // proxy: 'http://localhost:8000'   // 配置跨域处理,只有一个代理
         proxy: {
             //配置自动启动浏览器
+            // "/*": {
+            //     target: "http://192.168.99.150:8004",
+            //     changeOrigin: true,
+            //     // ws: true,//websocket支持
+            //     secure: false
+            // },
             "/*": {
-                target: "http://192.168.99.150:8004",
+                target: "https://vc.easyrts.com",
                 changeOrigin: true,
                 // ws: true,//websocket支持
                 secure: false

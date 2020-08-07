@@ -611,15 +611,43 @@ div {
 .container_meetIndex{
 		height: 100%;
 		display: flex;
-		flex-direction: column;
+        flex-direction: column;
+        .meetLink_dialog{
+            .el-dialog{
+                max-width: 700px;
+            }
+        }
 		.meetIndex_header{
 			padding-bottom: 20px;
 			border-bottom: 1px solid #E7EAED;
 		}
 		.meetIndex_body{
 			flex: 1;
-			padding: 20px 0;
-		}
+            padding: 20px 0;
+            .meetLink{
+                cursor: pointer;
+                &:hover{
+                    color: $activeColor;
+                }
+            }
+        }
+        .linkInput{
+            position: relative;
+            .el-input__inner{
+                padding-right: 50px;
+            }
+            .copy{
+                position: absolute;
+                font-size: 24px;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                &:hover{
+                    color:$activeColor;
+                }
+            }
+        }
 		.meetIndex_footer{
 			height: 50px;
 			display: flex;

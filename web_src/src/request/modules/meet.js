@@ -40,3 +40,12 @@ export const editMeet = data => {
         data
     })
 }
+//获取会议室主持人oken
+
+export const getMeetToken = data => {
+    return axios({
+        url: '/admin/room/token',
+        method: 'post',
+        data
+    })
+}

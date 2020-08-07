@@ -19,7 +19,7 @@ export default {
   data() {
     return {
       JitsiMeetExternal: "", //简会实例
-      meetInfo: "", //房间信息
+      roomName: "",
       camera: false,
       options: [
         { lable: "关闭摄像头", id: "camera", icon: "iconguanbishexiangtou1" },
@@ -46,21 +46,18 @@ export default {
     };
   },
   mounted() {
-    if (this.$route.query.id) {
-      this.getMeet();
-    } else {
-      this.$router.push("/MeetIndex");
-    }
+    this.roomName = this.$route.query.roomName;
+    this.jwt = this.$route.query.jwt;
+    this.setJME();
   },
   methods: {
     // 实例化简会系统
     setJME() {
-      let that = this;
-      this.JitsiMeetExternal = new JitsiMeetExternalAPI("room.jhmeeting.com", {
-        roomName: "xiaohui",
+      console.log(this.roomName,this.jwt);
+      this.JitsiMeetExternal = new JitsiMeetExternalAPI("vc.easyrts.com", {
+        roomName: this.roomName,
         parentNode: document.getElementById("meet"),
-        jwt:
-          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiIqIiwianRpIjoiZWQyOTkxYmMtZTgwOC00ZTZlLWIxYTYtMjcyNGQ0NGQ1MDRiIiwiaWF0IjoxNTk2Njk0ODYwLCJpc3MiOiJqbWVldCIsInJvb20iOiJ4aWFvaHVpIn0.L80c5XQxzNBdYBPoWIVLkslXAe-nBOxbsNmCQtJkm5c",
+        jwt: this.jwt,
       });
       this.JitsiMeetExternal.on("videoConferenceJoined", function () {
         console.log("videoConferenceJoined");
@@ -76,15 +73,6 @@ export default {
       // 监听挂断事假
       this.JitsiMeetExternal.on("videoConferenceLeft", function (p) {
         that.$router.push("/MeetIndex");
-      });
-    },
-    // 获取房间信息
-    getMeet() {
-      getMeet({
-        id: parseInt(this.$route.query.id),
-      }).then((res) => {
-        this.meetInfo = res;
-        this.setJME();
       });
     },
   },

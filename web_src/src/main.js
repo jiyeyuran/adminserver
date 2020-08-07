@@ -6,11 +6,14 @@ import "@/assets/icon/iconfont.css"
 import 'element-ui/lib/theme-chalk/index.css';
 import Vuex from 'vuex'
 import $ from 'jquery'
+import VueClipboards from 'vue-clipboards';
 import ElementUI from 'element-ui'
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)
 Vue.use(Vuex)
+Vue.use(VueClipboards);
+
 
 new Vue({
   router,

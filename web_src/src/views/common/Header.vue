@@ -19,9 +19,6 @@
           <i class="iconfont iconxia el-dropdown-link" @click="showDropdown"></i>
           <div class="dropdown" v-show="dropdown">
             <ul>
-              <li class="iconfont iconmima">
-                <span>修改密码</span>
-              </li>
               <li class="iconfont iconzhuxiao" @click="logout">
                 <span>注销</span>
               </li>

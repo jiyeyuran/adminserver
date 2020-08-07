@@ -34,9 +34,6 @@
         <el-form-item label="会议室密码:" prop="lockPassword">
           <el-input v-model="ruleForm.roomConfig.lockPassword"></el-input>
         </el-form-item>
-        <el-form-item label="上行比特率:" prop="bandwidth">
-          <el-input v-model="ruleForm.roomConfig.bandwidth"></el-input>
-        </el-form-item>
         <div class="formTitle">
           <span>其他设置</span>
         </div>
@@ -85,7 +82,6 @@ export default {
         roomConfig: {
           subject: "",
           resolution: 480,
-          bandwidth: 1000,
           lockPassword: "",
           requireDisplayName: true,
           startWithAudioMuted: false,

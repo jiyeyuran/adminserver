@@ -193,15 +193,17 @@ export default {
           }
         }
         if (valid) {
-          sigin(this.loginForm).then((res) => {
-            this.$message({
-              message: "注册成功",
-              type: "success",
+          sigin(this.loginForm)
+            .then((res) => {
+              this.$message({
+                message: "注册成功",
+                type: "success",
+              });
+              this.$router.push("/MeetIndex");
+            })
+            .catch((res) => {
+              console.log(res);
             });
-            this.$router.push('/login')
-          }).catch(res=>{
-            console.log(res);
-          })
         } else {
           console.log("没通过");
         }

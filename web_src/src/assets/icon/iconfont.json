@@ -6,6 +6,13 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "11901815",
+      "name": "fuzhi",
+      "font_class": "fuzhi",
+      "unicode": "e649",
+      "unicode_decimal": 58953
+    },
+    {
       "icon_id": "11730000",
       "name": "password",
       "font_class": "password",
