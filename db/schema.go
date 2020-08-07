@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql/driver"
 	"fmt"
 	"net/url"
 	"reflect"
@@ -12,6 +13,8 @@ import (
 	"github.com/gocraft/dbr/v2/dialect"
 	"github.com/pkg/errors"
 )
+
+var driverValuerType = reflect.TypeOf((driver.Valuer)(nil))
 
 type indexTag struct {
 	Name    string
@@ -228,7 +231,8 @@ func field2SQL(d dbr.Dialect, field reflect.StructField) string {
 		return buf.String()
 	}
 
-	if field.Type.Kind() == reflect.Ptr {
+	if field.Type.Kind() == reflect.Ptr ||
+		field.Type.Implements(driverValuerType) {
 		buf.WriteString("NULL")
 		defaultVal = ""
 	} else {
