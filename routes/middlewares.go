@@ -34,16 +34,15 @@ func timeoutMiddleware(timeout time.Duration) func(c *gin.Context) {
 func errorMiddleware(c *gin.Context) {
 	c.Next()
 
-	if err := c.Errors; err != nil {
-		log.Printf("[EROR] %s", err.Last().Error())
+	if err := c.Errors.Last(); err != nil {
+		log.Printf("[EROR] %s", err.Error())
 
 		status := c.Writer.Status()
 		if status <= 0 {
 			status = 500
 		}
-		if err.Last() != nil {
-			c.AbortWithStatusJSON(status, err.Last())
-		}
+
+		c.AbortWithStatusJSON(status, err)
 	}
 }
 
