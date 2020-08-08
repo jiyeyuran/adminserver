@@ -14,7 +14,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-var driverValuerType = reflect.TypeOf((driver.Valuer)(nil))
+var driverValuerType = reflect.TypeOf((*driver.Valuer)(nil)).Elem()
 
 type indexTag struct {
 	Name    string
