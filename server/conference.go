@@ -32,8 +32,8 @@ func (s ConferenceServer) Info(c *gin.Context) {
 		return
 	}
 	info := app.ConferenceInfo{}
-	err := s.DB().Select("*").From("conference").
-		Where("id=? and uid=?", param.ID, c.GetInt64(app.UserID)).LoadOneContext(c, &info)
+	err := s.DB().Select(app.SqlStar).From(app.ConferenceTableName).
+		Where(app.WhereCommonIdAndUid, param.ID, c.GetInt64(app.UserID)).LoadOneContext(c, &info)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -44,9 +44,9 @@ func (s ConferenceServer) Info(c *gin.Context) {
 // Runing 获取正在进行的会议室列表
 func (s ConferenceServer) Runing(c *gin.Context) {
 	items := []app.ConferenceInfo{}
-	result, err := db.NewSelector(s.DB()).From("conference").Where(
-		dbr.Eq("uid", c.GetInt64(app.UserID)),
-		dbr.Eq("etime", nil),
+	result, err := db.NewSelector(s.DB()).From(app.ConferenceTableName).Where(
+		dbr.Eq(app.CommonUidCol, c.GetInt64(app.UserID)),
+		dbr.Eq(app.ConferenceEtimeCol, nil),
 	).LoadPage(&items)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -89,28 +89,28 @@ func (s ConferenceServer) History(c *gin.Context) {
 	selector := db.NewSelector(s.DB())
 
 	selector.Conditions = append(selector.Conditions, db.Condition{
-		Col: "uid",
+		Col: app.CommonUidCol,
 		Cmp: "eq",
 		Val: c.GetInt64(app.UserID),
 	})
 
 	if len(param.RoomName) > 0 {
 		selector.Conditions = append(selector.Conditions, db.Condition{
-			Col: "room_name",
+			Col: app.RoomNameCol,
 			Cmp: "eq",
 			Val: param.RoomName,
 		})
 	}
 	if param.Range.StartTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
-			Col: "ctime",
+			Col: app.CommonCtimeCol,
 			Cmp: "gte",
 			Val: param.Range.StartTime,
 		})
 	}
 	if param.Range.EndTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
-			Col: "ctime",
+			Col: app.CommonCtimeCol,
 			Cmp: "lte",
 			Val: param.Range.EndTime,
 		})
@@ -123,10 +123,10 @@ func (s ConferenceServer) History(c *gin.Context) {
 	confereces := []app.ConferenceInfo{}
 	result, err := selector.Paginate(param.Page, param.PerPage).LoadPage(&confereces)
 	if err != nil {
-		c.AbortWithError(500, err)
+		c.AbortWithError(http.StatusInternalServerError, err)
 		return
 	}
-	c.JSON(200, result)
+	c.JSON(http.StatusOK, result)
 }
 
 //Action 会议室事件
@@ -144,15 +144,15 @@ func (s ConferenceServer) Action(c *gin.Context) {
 	switch req.Action {
 	case MUC_ROOM_INFO:
 		var roomInfo app.RoomInfo
-		err := s.DB().Select("*").From("room").Where("room_name=?", req.Room).LoadOne(&roomInfo)
+		err := s.DB().Select(app.SqlStar).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).LoadOne(&roomInfo)
 		if err != nil {
 			c.AbortWithError(http.StatusNotFound, err)
 			return
 		}
-		c.JSON(200, roomInfo)
+		c.JSON(http.StatusOK, roomInfo)
 
 	case MUC_ROOM_PRE_CREATE:
-		uid, _ := s.DB().Select("id").From("room").Where("room_name=?", req.Room).ReturnInt64()
+		uid, _ := s.DB().Select(app.CommonIdCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 		if uid == 0 {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
 			return
@@ -163,55 +163,55 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			ApiEnabled: req.ApiEnabled,
 			Ctime:      time.Now(),
 		}
-		_, err := s.DB().InsertInto("conference").
-			Columns("uid", "room_name", "api_enabled", "ctime").
+		_, err := s.DB().InsertInto(app.ConferenceTableName).
+			Columns(app.CommonIdCol, app.ConferenceRoomNameCol, app.ConferenceApiEnabledCol, app.CommonCtimeCol).
 			Record(&confereceInfo).ExecContext(c)
 		if err == nil {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
 			return
 		}
-		c.JSON(200, confereceInfo)
+		c.JSON(http.StatusOK, confereceInfo)
 
 	case MUC_ROOM_CREATED:
 		log.Printf("room: %s created", req.Room)
 
 	case MUC_OCCUPANT_PRE_JOIN:
-		participantLimits, _ := s.DB().Select("participant_limits").From("room").Where("id=?", req.ConferenceId).ReturnInt64()
+		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereCommonId, req.ConferenceId).ReturnInt64()
 		if participantLimits > 0 && req.Participants >= int(participantLimits) {
 			c.AbortWithError(http.StatusServiceUnavailable, errors.New("会议室人数已达上限"))
 			return
 		}
 
 	case MUC_OCCUPANT_JOINED:
-		s.DB().Update("conference").Set("participants", req.Participants).Where("id=?", req.ConferenceId).ExecContext(c)
-		s.DB().Update("conference").Set("max_participants", req.Participants).
-			Where("id=? and max_participants<?", req.ConferenceId, req.Participants).ExecContext(c)
+		s.DB().Update(app.ConferenceTableName).Set(app.ConferencePartiCol, req.Participants).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
+		s.DB().Update(app.ConferenceTableName).Set(app.ConferenceMaxPartiCol, req.Participants).
+			Where(app.WhereIdAndMaxParti, req.ConferenceId, req.Participants).ExecContext(c)
 		// TODO: 数据库记录参会者
 
 	case MUC_OCCUPANT_LEFT:
-		s.DB().Update("conference").Set("participants", req.Participants).Where("id=?", req.ConferenceId).ExecContext(c)
+		s.DB().Update(app.ConferenceTableName).Set(app.ConferencePartiCol, req.Participants).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 		// TODO: 数据库更新参会者
 
 	case MUC_ROOM_DESTROYED:
-		s.DB().Update("conference").
-			Set("etime", time.Now()).
-			Set("is_recording", false).
-			Set("is_streaming", false).
-			Where("id=?", req.ConferenceId).ExecContext(c)
+		s.DB().Update(app.ConferenceTableName).
+			Set(app.ConferenceEtimeCol, time.Now()).
+			Set(app.ConferenceIsRecordCol, false).
+			Set(app.ConferenceIsStreamCol, false).
+			Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 
 	case MUC_ROOM_SECRET:
-		s.DB().Update("conference").Set("lock_password", req.Secret).Where("id=?", req.ConferenceId).ExecContext(c)
+		s.DB().Update(app.ConferenceTableName).Set(app.ConferenceLockPassCol, req.Secret).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 	case MUC_ROOM_RECORDING_START:
 		if recording := req.Recording; recording != nil {
 			isStreaming := len(recording.Streaming) > 0
 
-			s.DB().Update("conference").
-				Set("is_recording", !isStreaming).
-				Set("is_streaming", isStreaming).
-				Where("id=?", req.ConferenceId).ExecContext(c)
+			s.DB().Update(app.ConferenceTableName).
+				Set(app.ConferenceIsRecordCol, !isStreaming).
+				Set(app.ConferenceIsStreamCol, isStreaming).
+				Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 
 			if isStreaming {
-				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
+				uid, _ := s.DB().Select(app.CommonUidCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
 					Uid:          uid,
 					ConferenceId: req.ConferenceId,
@@ -227,19 +227,19 @@ func (s ConferenceServer) Action(c *gin.Context) {
 
 	case MUC_ROOM_RECORDING_STOP:
 		if recording := req.Recording; recording != nil {
-			s.DB().Update("conference").
-				Set("is_recording", false).
-				Set("is_streaming", false).
-				Where("id=?", req.ConferenceId).ExecContext(c)
+			s.DB().Update(app.ConferenceTableName).
+				Set(app.ConferenceIsRecordCol, false).
+				Set(app.ConferenceIsStreamCol, false).
+				Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 
 			if len(recording.Streaming) > 0 {
 				s.DB().Update(app.RecordTableName).
 					Set(app.RecordDurationCol, recording.Duration).
 					Set(app.RecordSizeCol, recording.Size).
-					Where("conference_id=? and streaming_url=? and duration=0", req.ConferenceId, recording.Streaming).
+					Where(app.WhereRecordConfIDAndStream, req.ConferenceId, recording.Streaming).
 					ExecContext(c)
 			} else {
-				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
+				uid, _ := s.DB().Select(app.CommonUidCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
 					Uid:          uid,
 					ConferenceId: req.ConferenceId,

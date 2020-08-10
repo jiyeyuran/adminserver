@@ -113,7 +113,7 @@ func (s RoomServer) List(c *gin.Context) {
 	result, _ := db.NewSelector(s.DB()).From(app.RoomTableName).
 		Where(dbr.Eq(app.CommonUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
-		OrderDesc(app.RoomIDCol).
+		OrderDesc(app.CommonIdCol).
 		LoadPage(&rooms)
 	c.JSON(http.StatusOK, result)
 }

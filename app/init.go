@@ -6,10 +6,10 @@ import (
 )
 
 var DBTables = map[string]interface{}{
-	UserTableName:        User{},
-	RoomTableName:        RoomInfo{},
-	ConfereneceTableName: ConferenceInfo{},
-	RecordTableName:      RecordInfo{},
+	UserTableName:       User{},
+	RoomTableName:       RoomInfo{},
+	ConferenceTableName: ConferenceInfo{},
+	RecordTableName:     RecordInfo{},
 }
 
 func InitSqlDB(session *dbr.Session) {

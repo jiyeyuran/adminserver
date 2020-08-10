@@ -16,6 +16,7 @@ const (
 const (
 	SqlStar             = "*"
 	CommonCtimeCol      = "ctime"
+	CommonIdCol         = "id"
 	CommonUidCol        = UserID
 	WhereCommonId       = "id=?"
 	WhereCommonIdAndUid = "id=? and uid=?"
@@ -61,7 +62,6 @@ type RoomInfo struct {
 // 房间表对应的表名称和字段名称
 const (
 	RoomTableName         = "room"
-	RoomIDCol             = "id"
 	RoomNameCol           = "room_name"
 	RoomPartLimitsCol     = "participant_limits"
 	RoomAllowAnonymousCol = "allow_anonymous"
@@ -121,7 +121,17 @@ type ConferenceInfo struct {
 
 // 房间表对应的表名称和字段名称
 const (
-	ConfereneceTableName = "conference"
+	ConferenceTableName     = "conference"
+	ConferenceEtimeCol      = "etime"
+	ConferenceRoomNameCol   = "room_name"
+	ConferenceApiEnabledCol = "api_enabled"
+	ConferencePartiCol      = "participants"
+	ConferenceMaxPartiCol   = "max_participants"
+	ConferenceIsRecordCol   = "is_recording"
+	ConferenceIsStreamCol   = "is_streaming"
+	ConferenceLockPassCol   = "lock_password"
+
+	WhereIdAndMaxParti = "id=? and max_participants<?"
 )
 
 //*****************************************会议回看定义*********************************************************/
@@ -141,11 +151,12 @@ type RecordInfo struct {
 // 会议回看表对应的字符串
 const (
 	RecordTableName       = "record"
-	RecordIdCol           = "id"
 	RecordConferenceIdCol = "conference_id"
 	RecordRoomNameCol     = "room_name"
 	RecordDurationCol     = "duration"
 	RecordSizeCol         = "size"
 	RecordDownUrlCol      = "download_url"
 	RecordStreamUrlCol    = "streaming_url"
+
+	WhereRecordConfIDAndStream = "conference_id=? and streaming_url=? and duration=0"
 )

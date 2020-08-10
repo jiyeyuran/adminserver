@@ -71,7 +71,7 @@ func (s RecordServer) List(c *gin.Context) {
 	result, _ := db.NewSelector(s.DB()).From(app.RecordTableName).
 		Where(dbr.Eq(app.CommonUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
-		OrderDesc(app.RecordIdCol).
+		OrderDesc(app.CommonIdCol).
 		LoadPage(&records)
 	c.JSON(http.StatusOK, result)
 }
