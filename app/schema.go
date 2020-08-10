@@ -37,7 +37,6 @@ type User struct {
 // 用户表对应的表名称和字段名称
 const (
 	UserTableName   = "users"
-	UserIDCol       = "id"
 	UserNameCol     = "name"
 	UserPasswordCol = "password"
 	UserDisNameCol  = "display_name"

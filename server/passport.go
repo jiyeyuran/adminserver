@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"jhmeeting.com/adminserver/util"
 	"net/http"
 	"time"
 
@@ -37,7 +38,7 @@ func (s PassportServer) Signup(c *gin.Context) {
 	}
 
 	var err error
-	param.Password, err = app.HashPassword(param.Password)
+	param.Password, err = util.HashPassword(param.Password)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -93,7 +94,7 @@ func (s PassportServer) Login(c *gin.Context) {
 		return
 	}
 
-	pass := app.CheckPasswordHash(param.Password, user.Password)
+	pass := util.CheckPasswordHash(param.Password, user.Password)
 
 	if !pass {
 		c.AbortWithError(http.StatusBadRequest, errors.New(errMsg))
@@ -143,14 +144,14 @@ func (s PassportServer) Modify(c *gin.Context) {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
-	pass := app.CheckPasswordHash(param.Password, user.Password)
+	pass := util.CheckPasswordHash(param.Password, user.Password)
 	if !pass {
 		c.AbortWithError(http.StatusBadRequest, errors.New("原密码错误"))
 		return
 	}
 
 	// 通过，将新密码变为 hash
-	newPassHash, err := app.HashPassword(param.NewPass)
+	newPassHash, err := util.HashPassword(param.NewPass)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
