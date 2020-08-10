@@ -1,11 +1,13 @@
 package db
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
 	"github.com/gocraft/dbr/v2"
 	"github.com/gocraft/dbr/v2/dialect"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -14,11 +16,11 @@ var configs = []Config{
 		Driver: "sqlite3",
 		DSN:    ":memory:",
 	},
-	{
-		Driver:   "postgres",
-		DSN:      "postgres://postgres:123456@localhost:5432/testdb?sslmode=disable",
-		Timezone: "Asia/Shanghai",
-	},
+	// {
+	// 	Driver:   "postgres",
+	// 	DSN:      "postgres://postgres:123456@localhost:5432/testdb?sslmode=disable",
+	// 	Timezone: "Asia/Shanghai",
+	// },
 }
 var sessions []*dbr.Session
 
@@ -50,7 +52,7 @@ type TestTable struct {
 	A string
 	B int `sql:"default:'1'"`
 	C struct{}
-	D dbr.NullTime
+	D NullTime
 	E *string
 	F string `sql:"type:text"`
 }
@@ -109,7 +111,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 "a" VARCHAR(255) NOT NULL DEFAULT '',
 "b" INTEGER NOT NULL DEFAULT '1',
 "c" TEXT NOT NULL,
-"d" DATETIME NOT NULL,
+"d" DATETIME NULL,
 "e" VARCHAR(255) NULL,
 "f" TEXT NOT NULL
 )`,
@@ -121,7 +123,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 				"`a` VARCHAR(255) NOT NULL DEFAULT '',\n" +
 				"`b` INTEGER NOT NULL DEFAULT '1',\n" +
 				"`c` TEXT NOT NULL,\n" +
-				"`d` DATETIME NOT NULL,\n" +
+				"`d` DATETIME NULL,\n" +
 				"`e` VARCHAR(255) NULL,\n" +
 				"`f` TEXT NOT NULL\n)",
 		},
@@ -132,7 +134,7 @@ func TestSchema2CreateTableSQL(t *testing.T) {
 "a" VARCHAR(255) NOT NULL DEFAULT '',
 "b" INTEGER NOT NULL DEFAULT '1',
 "c" TEXT NOT NULL,
-"d" TIMESTAMP NOT NULL,
+"d" TIMESTAMP NULL,
 "e" VARCHAR(255) NULL,
 "f" TEXT NOT NULL
 )`,
@@ -168,4 +170,9 @@ func TestParseTags(t *testing.T) {
 		"CREATE UNIQUE `ne` ON `people` (`name`,`email`)",
 		"CREATE INDEX `ctime` ON `people` (`ctime`)",
 	}, indexSQLs)
+}
+
+func TestTypeImplements(t *testing.T) {
+	tp := reflect.TypeOf(NullTime{})
+	assert.True(t, tp.Implements(driverValuerType))
 }
