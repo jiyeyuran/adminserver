@@ -30,8 +30,8 @@ func (s RoomServer) Info(c *gin.Context) {
 	}
 	uid := c.GetInt64(app.UserID)
 	room := app.RoomInfo{}
-	err := s.DB().Select("*").From("room").
-		Where("id=? and uid=?", param.ID, uid).LoadOneContext(c, &room)
+	err := s.DB().Select(app.SqlStar).From(app.RoomTableName).
+		Where(app.WhereCommonIdAndUid, param.ID, uid).LoadOneContext(c, &room)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -49,15 +49,15 @@ func (s RoomServer) Create(c *gin.Context) {
 	roomInfo.Ctime = time.Now()
 
 	room := app.RoomInfo{}
-	err := s.DB().Select("*").From("room").
-		Where("room_name=?", roomInfo.RoomName).LoadOneContext(c, &room)
+	err := s.DB().Select(app.SqlStar).From(app.RoomTableName).
+		Where(app.WhereRoomName, roomInfo.RoomName).LoadOneContext(c, &room)
 	if room.RoomName == roomInfo.RoomName {
 		c.AbortWithError(http.StatusBadRequest, errors.New("会议名已存在（会议名全部唯一）！"))
 		return
 	}
 
-	_, err = s.DB().InsertInto("room").
-		Columns("uid", "participant_limits", "room_name", "allow_anonymous", "config", "ctime").
+	_, err = s.DB().InsertInto(app.RoomTableName).
+		Columns(app.CommonUidCol, app.RoomPartLimitsCol, app.RoomNameCol, app.RoomAllowAnonymousCol, app.RoomConfigCol, app.CommonCtimeCol).
 		Record(&roomInfo).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -76,7 +76,7 @@ func (s RoomServer) Delete(c *gin.Context) {
 		return
 	}
 	uid := c.GetInt64(app.UserID)
-	_, err := s.DB().DeleteFrom("room").Where("id=? and uid=?", param.ID, uid).ExecContext(c)
+	_, err := s.DB().DeleteFrom(app.RoomTableName).Where(app.WhereCommonIdAndUid, param.ID, uid).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -89,11 +89,11 @@ func (s RoomServer) Modify(c *gin.Context) {
 		return
 	}
 	uid := c.GetInt64(app.UserID)
-	_, err := s.DB().Update("room").
-		Set("participant_limits", roomInfo.ParticipantLimits).
-		Set("allow_anonymous", roomInfo.AllowAnonymous).
-		Set("config", roomInfo.Config).
-		Where("id=? and uid=?", roomInfo.Id, uid).
+	_, err := s.DB().Update(app.RoomTableName).
+		Set(app.RoomPartLimitsCol, roomInfo.ParticipantLimits).
+		Set(app.RoomAllowAnonymousCol, roomInfo.AllowAnonymous).
+		Set(app.RoomConfigCol, roomInfo.Config).
+		Where(app.WhereCommonIdAndUid, roomInfo.Id, uid).
 		ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -110,10 +110,10 @@ func (s RoomServer) List(c *gin.Context) {
 	uid := c.GetInt64(app.UserID)
 	rooms := []app.RoomInfo{}
 
-	result, _ := db.NewSelector(s.DB()).From("room").
-		Where(dbr.Eq("uid", uid)).
+	result, _ := db.NewSelector(s.DB()).From(app.RoomTableName).
+		Where(dbr.Eq(app.CommonUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
-		OrderDesc("id").
+		OrderDesc(app.RoomIDCol).
 		LoadPage(&rooms)
 	c.JSON(http.StatusOK, result)
 }

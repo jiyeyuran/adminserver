@@ -44,8 +44,8 @@ func (s PassportServer) Signup(c *gin.Context) {
 	}
 
 	user := app.User{}
-	err = s.DB().Select("*").From("users").
-		Where("name=?", param.Name).LoadOneContext(c, &user)
+	err = s.DB().Select(app.SqlStar).From(app.UserTableName).
+		Where(app.WhereUserName, param.Name).LoadOneContext(c, &user)
 	if user.Name == param.Name {
 		c.AbortWithError(http.StatusBadRequest, errors.New("用户名已存在！"))
 		return
@@ -54,8 +54,8 @@ func (s PassportServer) Signup(c *gin.Context) {
 	param.Ctime = time.Now()
 	ctx := c.Request.Context()
 
-	_, err = s.DB().InsertInto("users").
-		Columns("name", "password", "ctime").
+	_, err = s.DB().InsertInto(app.UserTableName).
+		Columns(app.UserNameCol, app.UserPasswordCol, app.CommonCtimeCol).
 		Record(&param.User).ExecContext(ctx)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -86,8 +86,8 @@ func (s PassportServer) Login(c *gin.Context) {
 
 	errMsg := "用户名或密码错误"
 	user := app.User{}
-	err := s.DB().Select("*").From("users").
-		Where("name=?", param.Name).LoadOneContext(c, &user)
+	err := s.DB().Select(app.SqlStar).From(app.UserTableName).
+		Where(app.WhereUserName, param.Name).LoadOneContext(c, &user)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, errors.New(errMsg))
 		return
@@ -100,7 +100,7 @@ func (s PassportServer) Login(c *gin.Context) {
 		return
 	}
 	token := s.CreateToken(user.Id)
-	// secure 为 true 则仅允许 ssl 和 https 协议传输
+	// secure 为 true 则仅允许 ssl 和 https 协议传输 Cookie
 	c.SetCookie(app.CookieName, token, 0, "/", "", false, true)
 }
 
@@ -113,8 +113,8 @@ func (s PassportServer) Info(c *gin.Context) {
 	// 获取正在登陆的信息
 	uid := c.GetInt64(app.UserID)
 	user := app.User{}
-	err := s.DB().Select("*").From("users").
-		Where("id=?", uid).LoadOneContext(c, &user)
+	err := s.DB().Select(app.SqlStar).From(app.UserTableName).
+		Where(app.WhereCommonId, uid).LoadOneContext(c, &user)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -137,8 +137,8 @@ func (s PassportServer) Modify(c *gin.Context) {
 	uid := c.GetInt64(app.UserID)
 	// 检验原密码
 	user := app.User{}
-	err := s.DB().Select("*").From("users").
-		Where("id=?", uid).LoadOneContext(c, &user)
+	err := s.DB().Select(app.SqlStar).From(app.UserTableName).
+		Where(app.WhereCommonId, uid).LoadOneContext(c, &user)
 	if err != nil {
 		c.AbortWithError(http.StatusBadRequest, err)
 		return
@@ -157,13 +157,13 @@ func (s PassportServer) Modify(c *gin.Context) {
 	}
 
 	// 更新到数据库中
-	_, err = s.DB().Update("users").
-		Set("password", newPassHash).
-		Set("display_name", param.DisplayName).
-		Set("company", param.Company).
-		Set("phone", param.Phone).
-		Set("email", param.Email).
-		Where("id=?", uid).
+	_, err = s.DB().Update(app.UserTableName).
+		Set(app.UserPasswordCol, newPassHash).
+		Set(app.UserDisNameCol, param.DisplayName).
+		Set(app.UserCompanyCol, param.Company).
+		Set(app.UserPhoneCol, param.Phone).
+		Set(app.UserEmailCol, param.Email).
+		Where(app.WhereCommonId, uid).
 		ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)

@@ -213,14 +213,14 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			if isStreaming {
 				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
-					ConferenceUid: uid,
-					ConferenceId:  req.ConferenceId,
-					RoomName:      req.Room,
-					StreamingUrl:  recording.Streaming,
-					Ctime:         time.Now(),
+					Uid:          uid,
+					ConferenceId: req.ConferenceId,
+					RoomName:     req.Room,
+					StreamingUrl: recording.Streaming,
+					Ctime:        time.Now(),
 				}
 				s.DB().InsertInto(app.RecordTableName).
-					Columns(app.RecordConferenceUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol, app.RecordStreamUrlCol).
+					Columns(app.CommonUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol, app.RecordStreamUrlCol).
 					Record(&recordInfo).ExecContext(c)
 			}
 		}
@@ -241,18 +241,18 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			} else {
 				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
-					ConferenceUid: uid,
-					ConferenceId:  req.ConferenceId,
-					RoomName:      req.Room,
-					Duration:      recording.Duration,
-					Size:          recording.Size,
-					DownloadUrl:   recording.ObjectKey,
-					StreamingUrl:  recording.Streaming,
-					Ctime:         time.Now(),
+					Uid:          uid,
+					ConferenceId: req.ConferenceId,
+					RoomName:     req.Room,
+					Duration:     recording.Duration,
+					Size:         recording.Size,
+					DownloadUrl:  recording.ObjectKey,
+					StreamingUrl: recording.Streaming,
+					Ctime:        time.Now(),
 				}
 				s.DB().InsertInto(app.RecordTableName).
-					Columns(app.RecordConferenceUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol,
-						app.RecordDurationCol, app.RecordSizeCol, app.RecordDownUrlCol, app.RecordStreamUrlCol, app.RecordCtimeCol).
+					Columns(app.CommonUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol,
+						app.RecordDurationCol, app.RecordSizeCol, app.RecordDownUrlCol, app.RecordStreamUrlCol, app.CommonCtimeCol).
 					Record(&recordInfo).ExecContext(c)
 			}
 		}

@@ -30,8 +30,8 @@ func (s RecordServer) Info(c *gin.Context) {
 	uid := c.GetInt64(app.UserID)
 
 	record := app.RecordInfo{}
-	err := s.DB().Select("*").From(app.RecordTableName).
-		Where("id=? and conference_uid=?", param.ID, uid).LoadOneContext(c, &record)
+	err := s.DB().Select(app.SqlStar).From(app.RecordTableName).
+		Where(app.WhereCommonIdAndUid, param.ID, uid).LoadOneContext(c, &record)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -50,7 +50,7 @@ func (s RecordServer) Delete(c *gin.Context) {
 	uid := c.GetInt64(app.UserID)
 
 	_, err := s.DB().
-		DeleteFrom(app.RecordTableName).Where("id=? and conference_uid=?", param.ID, uid).ExecContext(c)
+		DeleteFrom(app.RecordTableName).Where(app.WhereCommonIdAndUid, param.ID, uid).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -69,7 +69,7 @@ func (s RecordServer) List(c *gin.Context) {
 	records := []app.RecordInfo{}
 
 	result, _ := db.NewSelector(s.DB()).From(app.RecordTableName).
-		Where(dbr.Eq(app.RecordConferenceUidCol, uid)).
+		Where(dbr.Eq(app.CommonUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
 		OrderDesc(app.RecordIdCol).
 		LoadPage(&records)

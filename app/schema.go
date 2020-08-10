@@ -13,6 +13,15 @@ const (
 	UserID = "uid"
 )
 
+const (
+	SqlStar             = "*"
+	CommonCtimeCol      = "ctime"
+	CommonUidCol        = UserID
+	WhereCommonId       = "id=?"
+	WhereCommonIdAndUid = "id=? and uid=?"
+)
+
+//*****************************************用户数据*********************************************************/
 // 用户
 type User struct {
 	Id          int64     `json:"id,omitempty"`       // id
@@ -25,6 +34,20 @@ type User struct {
 	Ctime       time.Time `json:"ctime,omitempty"`    // 创建时间
 }
 
+// 用户表对应的表名称和字段名称
+const (
+	UserTableName   = "users"
+	UserIDCol       = "id"
+	UserNameCol     = "name"
+	UserPasswordCol = "password"
+	UserDisNameCol  = "display_name"
+	UserEmailCol    = "email"
+	UserPhoneCol    = "phone"
+	UserCompanyCol  = "company"
+	WhereUserName   = "name=?"
+)
+
+//*****************************************用户创建会议室*********************************************************/
 // 房间信息
 type RoomInfo struct {
 	Id                int64      `json:"id,omitempty"`
@@ -35,6 +58,17 @@ type RoomInfo struct {
 	Config            RoomConfig `json:"roomConfig,omitempty"`                  // 房间配置
 	Ctime             time.Time  `json:"ctime,omitempty"  sql:"index:ri_ctime"` // 创建时间
 }
+
+// 房间表对应的表名称和字段名称
+const (
+	RoomTableName         = "room"
+	RoomIDCol             = "id"
+	RoomNameCol           = "room_name"
+	RoomPartLimitsCol     = "participant_limits"
+	RoomAllowAnonymousCol = "allow_anonymous"
+	RoomConfigCol         = "room_config"
+	WhereRoomName         = "room_name=?"
+)
 
 // 房间配置
 type RoomConfig struct {
@@ -69,6 +103,7 @@ func (config *RoomConfig) Scan(src interface{}) error {
 	return json.Unmarshal(source, config)
 }
 
+//*****************************************正在开会会议室*********************************************************/
 // 会议室信息，会议室表示正在开会的房间
 type ConferenceInfo struct {
 	Id              int64       `json:"id,omitempty"`
@@ -85,30 +120,33 @@ type ConferenceInfo struct {
 	Etime           db.NullTime `json:"etime,omitempty" sql:"index:ci_etime"`        // 结束时间
 }
 
+// 房间表对应的表名称和字段名称
+const (
+	ConfereneceTableName = "conference"
+)
+
 //*****************************************会议回看定义*********************************************************/
 // 会议回看信息
 type RecordInfo struct {
-	Id            int64     `json:"id,omitempty"`
-	ConferenceId  int64     `json:"conferenceId,omitempty"`  // 会议室id
-	ConferenceUid int64     `json:"conferenceUid,omitempty"` // 会议室用户id
-	RoomName      string    `json:"roomName,omitempty"`      // 会议室名称
-	Duration      int64     `json:"duration,omitempty"`      // 录制时长
-	Size          int64     `json:"size,omitempty"`          // 文件大小
-	DownloadUrl   string    `json:"downloadUrl,omitempty"`   // 录像 url 地址
-	StreamingUrl  string    `json:"streamingUrl,omitempty"`  // 推流 url 地址
-	Ctime         time.Time `json:"ctime,omitempty"`         // 开始时间
+	Id           int64     `json:"id,omitempty"`
+	ConferenceId int64     `json:"conferenceId,omitempty"` // 会议室id
+	Uid          int64     `json:"uid,omitempty"`          // 会议室用户id
+	RoomName     string    `json:"roomName,omitempty"`     // 会议室名称
+	Duration     int64     `json:"duration,omitempty"`     // 录制时长
+	Size         int64     `json:"size,omitempty"`         // 文件大小
+	DownloadUrl  string    `json:"downloadUrl,omitempty"`  // 录像 url 地址
+	StreamingUrl string    `json:"streamingUrl,omitempty"` // 推流 url 地址
+	Ctime        time.Time `json:"ctime,omitempty"`        // 开始时间
 }
 
 // 会议回看表对应的字符串
 const (
-	RecordTableName        = "record"
-	RecordIdCol            = "id"
-	RecordConferenceIdCol  = "conference_id"
-	RecordConferenceUidCol = "conference_uid"
-	RecordRoomNameCol      = "room_name"
-	RecordCtimeCol         = "ctime"
-	RecordDurationCol      = "duration"
-	RecordSizeCol          = "size"
-	RecordDownUrlCol       = "download_url"
-	RecordStreamUrlCol     = "streaming_url"
+	RecordTableName       = "record"
+	RecordIdCol           = "id"
+	RecordConferenceIdCol = "conference_id"
+	RecordRoomNameCol     = "room_name"
+	RecordDurationCol     = "duration"
+	RecordSizeCol         = "size"
+	RecordDownUrlCol      = "download_url"
+	RecordStreamUrlCol    = "streaming_url"
 )
