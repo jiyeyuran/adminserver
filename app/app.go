@@ -231,7 +231,7 @@ func (app App) APIRoute(c *gin.Context, apiPath string) {
 		req.URL.Path = apiPath
 
 		req.Header.Set("Authorization", "Bearer "+app.config.API.Token)
-		req.Header.Set("X-Uid", fmt.Sprintf("%d", c.GetInt64("uid")))
+		req.Header.Set("X-Uid", fmt.Sprintf("%d", c.GetInt64(UserID)))
 	}
 	proxy.ServeHTTP(c.Writer, c.Request)
 }

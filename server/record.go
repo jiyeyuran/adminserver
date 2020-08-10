@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/gocraft/dbr/v2"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,9 +27,11 @@ func (s RecordServer) Info(c *gin.Context) {
 		return
 	}
 
+	uid := c.GetInt64(app.UserID)
+
 	record := app.RecordInfo{}
 	err := s.DB().Select("*").From(app.RecordTableName).
-		Where(app.WhereRecordID, param.ID).LoadOneContext(c, &record)
+		Where("id=? and conference_uid=?", param.ID, uid).LoadOneContext(c, &record)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -44,7 +47,10 @@ func (s RecordServer) Delete(c *gin.Context) {
 	if c.BindJSON(&param) != nil {
 		return
 	}
-	_, err := s.DB().DeleteFrom(app.RecordTableName).Where(app.WhereRecordID, param.ID).ExecContext(c)
+	uid := c.GetInt64(app.UserID)
+
+	_, err := s.DB().
+		DeleteFrom(app.RecordTableName).Where("id=? and conference_uid=?", param.ID, uid).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -58,9 +64,12 @@ func (s RecordServer) List(c *gin.Context) {
 		return
 	}
 
+	uid := c.GetInt64(app.UserID)
+
 	records := []app.RecordInfo{}
 
 	result, _ := db.NewSelector(s.DB()).From(app.RecordTableName).
+		Where(dbr.Eq(app.RecordConferenceUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
 		OrderDesc(app.RecordIdCol).
 		LoadPage(&records)

@@ -111,7 +111,7 @@ func (s PassportServer) Logout(c *gin.Context) {
 // 获取账户信息
 func (s PassportServer) Info(c *gin.Context) {
 	// 获取正在登陆的信息
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	user := app.User{}
 	err := s.DB().Select("*").From("users").
 		Where("id=?", uid).LoadOneContext(c, &user)
@@ -134,7 +134,7 @@ func (s PassportServer) Modify(c *gin.Context) {
 		return
 	}
 
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	// 检验原密码
 	user := app.User{}
 	err := s.DB().Select("*").From("users").

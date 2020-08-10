@@ -28,7 +28,7 @@ func (s RoomServer) Info(c *gin.Context) {
 	if c.BindJSON(&param) != nil {
 		return
 	}
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	room := app.RoomInfo{}
 	err := s.DB().Select("*").From("room").
 		Where("id=? and uid=?", param.ID, uid).LoadOneContext(c, &room)
@@ -45,14 +45,14 @@ func (s RoomServer) Create(c *gin.Context) {
 		return
 	}
 
-	roomInfo.Uid = c.GetInt64("uid")
+	roomInfo.Uid = c.GetInt64(app.UserID)
 	roomInfo.Ctime = time.Now()
 
 	room := app.RoomInfo{}
 	err := s.DB().Select("*").From("room").
-		Where("uid=? and name=?", roomInfo.Uid, roomInfo.RoomName).LoadOneContext(c, &room)
+		Where("room_name=?", roomInfo.RoomName).LoadOneContext(c, &room)
 	if room.RoomName == roomInfo.RoomName {
-		c.AbortWithError(http.StatusBadRequest, errors.New("会议名已存在！"))
+		c.AbortWithError(http.StatusBadRequest, errors.New("会议名已存在（会议名全部唯一）！"))
 		return
 	}
 
@@ -75,7 +75,7 @@ func (s RoomServer) Delete(c *gin.Context) {
 	if c.BindJSON(&param) != nil {
 		return
 	}
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	_, err := s.DB().DeleteFrom("room").Where("id=? and uid=?", param.ID, uid).ExecContext(c)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
@@ -88,7 +88,7 @@ func (s RoomServer) Modify(c *gin.Context) {
 	if c.BindJSON(&roomInfo) != nil {
 		return
 	}
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	_, err := s.DB().Update("room").
 		Set("participant_limits", roomInfo.ParticipantLimits).
 		Set("allow_anonymous", roomInfo.AllowAnonymous).
@@ -107,7 +107,7 @@ func (s RoomServer) List(c *gin.Context) {
 		return
 	}
 
-	uid := c.GetInt64("uid")
+	uid := c.GetInt64(app.UserID)
 	rooms := []app.RoomInfo{}
 
 	result, _ := db.NewSelector(s.DB()).From("room").

@@ -33,7 +33,7 @@ func (s ConferenceServer) Info(c *gin.Context) {
 	}
 	info := app.ConferenceInfo{}
 	err := s.DB().Select("*").From("conference").
-		Where("id=? and uid=?", param.ID, c.GetInt64("uid")).LoadOneContext(c, &info)
+		Where("id=? and uid=?", param.ID, c.GetInt64(app.UserID)).LoadOneContext(c, &info)
 	if err != nil {
 		c.AbortWithError(http.StatusNotFound, err)
 		return
@@ -45,7 +45,7 @@ func (s ConferenceServer) Info(c *gin.Context) {
 func (s ConferenceServer) Runing(c *gin.Context) {
 	items := []app.ConferenceInfo{}
 	result, err := db.NewSelector(s.DB()).From("conference").Where(
-		dbr.Eq("uid", c.GetInt64("uid")),
+		dbr.Eq("uid", c.GetInt64(app.UserID)),
 		dbr.Eq("etime", nil),
 	).LoadPage(&items)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 	selector.Conditions = append(selector.Conditions, db.Condition{
 		Col: "uid",
 		Cmp: "eq",
-		Val: c.GetInt64("uid"),
+		Val: c.GetInt64(app.UserID),
 	})
 
 	if len(param.RoomName) > 0 {
@@ -211,14 +211,16 @@ func (s ConferenceServer) Action(c *gin.Context) {
 				Where("id=?", req.ConferenceId).ExecContext(c)
 
 			if isStreaming {
+				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
-					ConferenceId: req.ConferenceId,
-					RoomName:     req.Room,
-					StreamingUrl: recording.Streaming,
-					Ctime:        time.Now(),
+					ConferenceUid: uid,
+					ConferenceId:  req.ConferenceId,
+					RoomName:      req.Room,
+					StreamingUrl:  recording.Streaming,
+					Ctime:         time.Now(),
 				}
-				s.DB().InsertInto("record").
-					Columns("conference_id", "room_name", "streaming_url").
+				s.DB().InsertInto(app.RecordTableName).
+					Columns(app.RecordConferenceUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol, app.RecordStreamUrlCol).
 					Record(&recordInfo).ExecContext(c)
 			}
 		}
@@ -231,23 +233,26 @@ func (s ConferenceServer) Action(c *gin.Context) {
 				Where("id=?", req.ConferenceId).ExecContext(c)
 
 			if len(recording.Streaming) > 0 {
-				s.DB().Update("record").
-					Set("duration", recording.Duration).
-					Set("size", recording.Size).
+				s.DB().Update(app.RecordTableName).
+					Set(app.RecordDurationCol, recording.Duration).
+					Set(app.RecordSizeCol, recording.Size).
 					Where("conference_id=? and streaming_url=? and duration=0", req.ConferenceId, recording.Streaming).
 					ExecContext(c)
 			} else {
+				uid, _ := s.DB().Select("uid").From("room").Where("room_name=?", req.Room).ReturnInt64()
 				recordInfo := app.RecordInfo{
-					ConferenceId: req.ConferenceId,
-					RoomName:     req.Room,
-					Duration:     recording.Duration,
-					Size:         recording.Size,
-					DownloadUrl:  recording.ObjectKey,
-					StreamingUrl: recording.Streaming,
-					Ctime:        time.Now(),
+					ConferenceUid: uid,
+					ConferenceId:  req.ConferenceId,
+					RoomName:      req.Room,
+					Duration:      recording.Duration,
+					Size:          recording.Size,
+					DownloadUrl:   recording.ObjectKey,
+					StreamingUrl:  recording.Streaming,
+					Ctime:         time.Now(),
 				}
-				s.DB().InsertInto("record").
-					Columns("conference_id", "room_name", "duration", "size", "download_url", "streaming_url", "ctime").
+				s.DB().InsertInto(app.RecordTableName).
+					Columns(app.RecordConferenceUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol,
+						app.RecordDurationCol, app.RecordSizeCol, app.RecordDownUrlCol, app.RecordStreamUrlCol, app.RecordCtimeCol).
 					Record(&recordInfo).ExecContext(c)
 			}
 		}
