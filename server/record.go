@@ -1,8 +1,9 @@
 package server
 
 import (
-	"github.com/gocraft/dbr/v2"
 	"net/http"
+
+	"github.com/gocraft/dbr/v2"
 
 	"github.com/gin-gonic/gin"
 	"jhmeeting.com/adminserver/app"
@@ -69,7 +70,7 @@ func (s RecordServer) List(c *gin.Context) {
 	records := []app.RecordInfo{}
 
 	result, _ := db.NewSelector(s.DB()).From(app.RecordTableName).
-		Where(dbr.Eq(app.RecordConferenceUidCol, uid)).
+		Where(dbr.Eq(app.RecordUidCol, uid)).
 		Paginate(param.Page, param.PerPage).
 		OrderDesc(app.RecordIdCol).
 		LoadPage(&records)

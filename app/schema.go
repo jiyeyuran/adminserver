@@ -88,27 +88,27 @@ type ConferenceInfo struct {
 //*****************************************会议回看定义*********************************************************/
 // 会议回看信息
 type RecordInfo struct {
-	Id            int64     `json:"id,omitempty"`
-	ConferenceId  int64     `json:"conferenceId,omitempty"`  // 会议室id
-	ConferenceUid int64     `json:"conferenceUid,omitempty"` // 会议室用户id
-	RoomName      string    `json:"roomName,omitempty"`      // 会议室名称
-	Duration      int64     `json:"duration,omitempty"`      // 录制时长
-	Size          int64     `json:"size,omitempty"`          // 文件大小
-	DownloadUrl   string    `json:"downloadUrl,omitempty"`   // 录像 url 地址
-	StreamingUrl  string    `json:"streamingUrl,omitempty"`  // 推流 url 地址
-	Ctime         time.Time `json:"ctime,omitempty"`         // 开始时间
+	Id           int64     `json:"id,omitempty"`
+	Uid          int64     `json:"uid,omitempty"`          // 用户id
+	ConferenceId int64     `json:"conferenceId,omitempty"` // 会议室id
+	RoomName     string    `json:"roomName,omitempty"`     // 会议室名称
+	Duration     int64     `json:"duration,omitempty"`     // 录制时长
+	Size         int64     `json:"size,omitempty"`         // 文件大小
+	DownloadUrl  string    `json:"downloadUrl,omitempty"`  // 录像 url 地址
+	StreamingUrl string    `json:"streamingUrl,omitempty"` // 推流 url 地址
+	Ctime        time.Time `json:"ctime,omitempty"`        // 开始时间
 }
 
 // 会议回看表对应的字符串
 const (
-	RecordTableName        = "record"
-	RecordIdCol            = "id"
-	RecordConferenceIdCol  = "conference_id"
-	RecordConferenceUidCol = "conference_uid"
-	RecordRoomNameCol      = "room_name"
-	RecordCtimeCol         = "ctime"
-	RecordDurationCol      = "duration"
-	RecordSizeCol          = "size"
-	RecordDownUrlCol       = "download_url"
-	RecordStreamUrlCol     = "streaming_url"
+	RecordTableName       = "record"
+	RecordIdCol           = "id"
+	RecordConferenceIdCol = "conference_id"
+	RecordUidCol          = "uid"
+	RecordRoomNameCol     = "room_name"
+	RecordCtimeCol        = "ctime"
+	RecordDurationCol     = "duration"
+	RecordSizeCol         = "size"
+	RecordDownUrlCol      = "download_url"
+	RecordStreamUrlCol    = "streaming_url"
 )
