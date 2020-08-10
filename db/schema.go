@@ -88,7 +88,6 @@ func CreateTable(session *dbr.Session, table string, schema interface{}) (err er
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	colTypes, _ := rows.ColumnTypes()
 	quotedTable := session.QuoteIdent(table)
 	tp := reflect.Indirect(reflect.ValueOf(schema)).Type()
 
@@ -104,17 +103,6 @@ func CreateTable(session *dbr.Session, table string, schema interface{}) (err er
 			sqlstr := fmt.Sprintf("ALTER TABLE %s ADD %s", quotedTable, field2SQL(baseDialect, field))
 			if _, err = session.InsertBySql(sqlstr).Exec(); err != nil {
 				return errors.WithStack(err)
-			}
-		} else if scanType := colTypes[i].ScanType(); scanType != nil {
-			scanKind := scanType.Kind()
-			fieldKind := fieldKind(field)
-
-			if kindType(scanKind) != kindType(fieldKind) {
-				// TODO: 暂时不开启修改字段
-				// sqlstr := fmt.Sprintf("ALTER TABLE %s MODIFY %s", quotedTable, field2SQL(baseDialect, field))
-				// if _, err = tx.InsertBySql(sqlstr).Exec(); err != nil {
-				// 	return errors.WithStack(err)
-				// }
 			}
 		}
 	}
