@@ -86,14 +86,18 @@ func (n *EventLogger) EventKv(eventName string, kvs map[string]string) {
 
 // EventErr receives a notification of an error if one occurs.
 func (n *EventLogger) EventErr(eventName string, err error) error {
-	log.Printf("event: %s, err: %s", eventName, err)
+	if err != dbr.ErrNotFound {
+		log.Printf("event: %s, err: %s", eventName, err)
+	}
 	return err
 }
 
 // EventErrKv receives a notification of an error if one occurs along with
 // optional key/value data.
 func (n *EventLogger) EventErrKv(eventName string, err error, kvs map[string]string) error {
-	log.Printf("event: %s, err: %s, sql: %v", eventName, err, kvs["sql"])
+	if err != dbr.ErrNotFound {
+		log.Printf("event: %s, err: %s, sql: %v", eventName, err, kvs["sql"])
+	}
 	return err
 }
 
