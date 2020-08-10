@@ -121,7 +121,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 	}
 
 	confereces := []app.ConferenceInfo{}
-	result, err := selector.Paginate(param.Page, param.PerPage).LoadPage(&confereces)
+	result, err := selector.From(app.ConferenceTableName).Paginate(param.Page, param.PerPage).LoadPage(&confereces)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
 		return
@@ -152,7 +152,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		c.JSON(http.StatusOK, roomInfo)
 
 	case MUC_ROOM_PRE_CREATE:
-		uid, _ := s.DB().Select(app.CommonIdCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
+		uid, _ := s.DB().Select(app.CommonUidCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 		if uid == 0 {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
 			return

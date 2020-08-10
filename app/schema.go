@@ -65,7 +65,7 @@ const (
 	RoomNameCol           = "room_name"
 	RoomPartLimitsCol     = "participant_limits"
 	RoomAllowAnonymousCol = "allow_anonymous"
-	RoomConfigCol         = "room_config"
+	RoomConfigCol         = "config"
 	WhereRoomName         = "room_name=?"
 )
 
