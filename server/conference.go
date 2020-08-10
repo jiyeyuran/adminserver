@@ -166,7 +166,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		_, err := s.DB().InsertInto("conference").
 			Columns("uid", "room_name", "api_enabled", "ctime").
 			Record(&confereceInfo).ExecContext(c)
-		if err == nil {
+		if err != nil {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
 			return
 		}
