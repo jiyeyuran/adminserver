@@ -1,6 +1,7 @@
 package db
 
 import (
+	"jhmeeting.com/adminserver/util"
 	"time"
 
 	"github.com/gocraft/dbr/v2"
@@ -60,4 +61,21 @@ func parseDateTime(str string, loc *time.Location) (t time.Time, err error) {
 	}
 
 	return
+}
+
+func (n *NullTime) UnmarshalJSON(data []byte) (err error) {
+	n.Time, err = parseDateTime(string(data), Local)
+	n.Valid = (err == nil)
+	return
+}
+
+func (n NullTime) MarshalJSON() ([]byte, error) {
+	b := make([]byte, 0, len(util.DateTimeLayout)+2)
+	b = append(b, '"')
+	value, _ := n.Value()
+	if value != nil {
+		b = n.Time.AppendFormat(b, util.DateTimeLayout)
+	}
+	b = append(b, '"')
+	return b, nil
 }

@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"go.uber.org/zap"
+	"jhmeeting.com/adminserver/util"
 	"net/http"
 	"time"
 
@@ -164,7 +165,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			Uid:        uid,
 			RoomName:   req.Room,
 			ApiEnabled: req.ApiEnabled,
-			Ctime:      time.Now(),
+			Ctime:      util.Now(),
 		}
 		_, err := s.DB().InsertInto(app.ConferenceTableName).
 			Columns(app.CommonUidCol, app.ConferenceRoomNameCol, app.ConferenceApiEnabledCol, app.CommonCtimeCol).
@@ -227,7 +228,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 					ConferenceId: req.ConferenceId,
 					RoomName:     req.Room,
 					StreamingUrl: recording.Streaming,
-					Ctime:        time.Now(),
+					Ctime:        util.Now(),
 				}
 				s.DB().InsertInto(app.RecordTableName).
 					Columns(app.CommonUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol, app.RecordStreamUrlCol).
@@ -259,7 +260,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 					Size:         recording.Size,
 					DownloadUrl:  recording.ObjectKey,
 					StreamingUrl: recording.Streaming,
-					Ctime:        time.Now(),
+					Ctime:        util.Now(),
 				}
 				s.DB().InsertInto(app.RecordTableName).
 					Columns(app.CommonUidCol, app.RecordConferenceIdCol, app.RecordRoomNameCol,

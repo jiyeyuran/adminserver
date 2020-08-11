@@ -2,13 +2,12 @@ package server
 
 import (
 	"errors"
-	"net/http"
-	"time"
-
 	"github.com/gin-gonic/gin"
 	"github.com/gocraft/dbr/v2"
 	"jhmeeting.com/adminserver/app"
 	"jhmeeting.com/adminserver/db"
+	"jhmeeting.com/adminserver/util"
+	"net/http"
 )
 
 type RoomServer struct {
@@ -46,7 +45,7 @@ func (s RoomServer) Create(c *gin.Context) {
 	}
 
 	roomInfo.Uid = c.GetInt64(app.UserID)
-	roomInfo.Ctime = time.Now()
+	roomInfo.Ctime = util.Now()
 
 	room := app.RoomInfo{}
 	err := s.DB().Select(app.SqlStar).From(app.RoomTableName).

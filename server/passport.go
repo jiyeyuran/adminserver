@@ -2,11 +2,9 @@ package server
 
 import (
 	"errors"
+	"github.com/dchest/captcha"
 	"jhmeeting.com/adminserver/util"
 	"net/http"
-	"time"
-
-	"github.com/dchest/captcha"
 
 	"github.com/gin-gonic/gin"
 	"jhmeeting.com/adminserver/app"
@@ -52,7 +50,7 @@ func (s PassportServer) Signup(c *gin.Context) {
 		return
 	}
 
-	param.Ctime = time.Now()
+	param.Ctime = util.Now()
 	ctx := c.Request.Context()
 
 	_, err = s.DB().InsertInto(app.UserTableName).
