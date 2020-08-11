@@ -110,8 +110,8 @@ type ConferenceInfo struct {
 	RoomName        string      `json:"roomName,omitempty" sql:"index:ci_room_name"` // 房间名称
 	Participants    int         `json:"participants,omitempty"`                      // 当前人数
 	MaxParticipants int         `json:"maxParticipants,omitempty"`                   // 最高人数
-	IsRecording     bool        `json:"isRecording,omitempty"`                       // 是否正在录制
-	IsStreaming     bool        `json:"isStreaming,omitempty"`                       // 是否正在直播
+	IsRecording     bool        `json:"isRecording,omitempty"`                       // 是否正在录制，直播也是录制
+	Streaming       string      `json:"streaming,omitempty"`                         // 直播地址，录制则需清空
 	ApiEnabled      bool        `json:"apiEnabled,omitempty"`                        // 是否是使用API接入的会议室
 	LockPassword    string      `json:"lockPassword,omitempty"`                      // 进入密码
 	Locked          bool        `json:"locked,omitempty"`                            // 是否锁定
@@ -128,7 +128,7 @@ const (
 	ConferencePartiCol      = "participants"
 	ConferenceMaxPartiCol   = "max_participants"
 	ConferenceIsRecordCol   = "is_recording"
-	ConferenceIsStreamCol   = "is_streaming"
+	ConferenceStreamingCol  = "streaming"
 	ConferenceLockPassCol   = "lock_password"
 
 	WhereIdAndMaxParti = "id=? and max_participants<?"
