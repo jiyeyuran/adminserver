@@ -1,6 +1,11 @@
 package server
 
-import "time"
+import (
+	"jhmeeting.com/adminserver/util"
+	"time"
+)
+
+var logger = util.GetLogger()
 
 const (
 	MUC_ROOM_PRE_CREATE      = "muc-room-pre-create"      // 创建会议前事件

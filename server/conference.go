@@ -2,7 +2,7 @@ package server
 
 import (
 	"errors"
-	"log"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
 
@@ -101,6 +101,7 @@ func (s ConferenceServer) History(c *gin.Context) {
 			Val: param.RoomName,
 		})
 	}
+
 	if param.Range.StartTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: app.CommonCtimeCol,
@@ -143,6 +144,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 
 	switch req.Action {
 	case MUC_ROOM_INFO:
+		logger.Info("get room.", zap.String("roomName", req.Room))
 		var roomInfo app.RoomInfo
 		err := s.DB().Select(app.SqlStar).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).LoadOne(&roomInfo)
 		if err != nil {
@@ -152,6 +154,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		c.JSON(http.StatusOK, roomInfo)
 
 	case MUC_ROOM_PRE_CREATE:
+		logger.Info("create room.", zap.String("roomName", req.Room))
 		uid, _ := s.DB().Select(app.CommonUidCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 		if uid == 0 {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
@@ -164,7 +167,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			Ctime:      time.Now(),
 		}
 		_, err := s.DB().InsertInto(app.ConferenceTableName).
-			Columns(app.CommonIdCol, app.ConferenceRoomNameCol, app.ConferenceApiEnabledCol, app.CommonCtimeCol).
+			Columns(app.CommonUidCol, app.ConferenceRoomNameCol, app.ConferenceApiEnabledCol, app.CommonCtimeCol).
 			Record(&confereceInfo).ExecContext(c)
 		if err != nil {
 			c.AbortWithError(http.StatusNotFound, errors.New("房间不存在"))
@@ -173,7 +176,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		c.JSON(http.StatusOK, confereceInfo)
 
 	case MUC_ROOM_CREATED:
-		log.Printf("room: %s created", req.Room)
+		logger.Info("created room.", zap.String("roomName", req.Room))
 
 	case MUC_OCCUPANT_PRE_JOIN:
 		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereCommonId, req.ConferenceId).ReturnInt64()
@@ -193,6 +196,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		// TODO: 数据库更新参会者
 
 	case MUC_ROOM_DESTROYED:
+		logger.Info("destory room.", zap.String("roomName", req.Room), zap.Reflect("time", time.Now()))
 		s.DB().Update(app.ConferenceTableName).
 			Set(app.ConferenceEtimeCol, time.Now()).
 			Set(app.ConferenceIsRecordCol, false).
