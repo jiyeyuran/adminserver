@@ -179,19 +179,23 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		logger.Info("created room.", zap.String("roomName", req.Room))
 
 	case MUC_OCCUPANT_PRE_JOIN:
+		logger.Info("pre join room.", zap.String("roomName", req.Room))
 		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 		if participantLimits > 0 && req.Participants >= int(participantLimits) {
+			logger.Info("pre join room. 会议室人数已达上限", zap.String("roomName", req.Room), zap.Int64("limits", participantLimits))
 			c.AbortWithError(http.StatusServiceUnavailable, errors.New("会议室人数已达上限"))
 			return
 		}
 
 	case MUC_OCCUPANT_JOINED:
+		logger.Info("joined room.", zap.String("roomName", req.Room))
 		s.DB().Update(app.ConferenceTableName).Set(app.ConferencePartiCol, req.Participants).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 		s.DB().Update(app.ConferenceTableName).Set(app.ConferenceMaxPartiCol, req.Participants).
 			Where(app.WhereIdAndMaxParti, req.ConferenceId, req.Participants).ExecContext(c)
 		// TODO: 数据库记录参会者
 
 	case MUC_OCCUPANT_LEFT:
+		logger.Info("left room.", zap.String("roomName", req.Room))
 		s.DB().Update(app.ConferenceTableName).Set(app.ConferencePartiCol, req.Participants).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 		// TODO: 数据库更新参会者
 
@@ -204,8 +208,11 @@ func (s ConferenceServer) Action(c *gin.Context) {
 			Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
 
 	case MUC_ROOM_SECRET:
+		logger.Info("secret room, need password.", zap.String("roomName", req.Room))
 		s.DB().Update(app.ConferenceTableName).Set(app.ConferenceLockPassCol, req.Secret).Where(app.WhereCommonId, req.ConferenceId).ExecContext(c)
+
 	case MUC_ROOM_RECORDING_START:
+		logger.Info("start recording room.", zap.String("roomName", req.Room))
 		if recording := req.Recording; recording != nil {
 			isStreaming := len(recording.Streaming) > 0
 
@@ -230,6 +237,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		}
 
 	case MUC_ROOM_RECORDING_STOP:
+		logger.Info("stop recording room.", zap.String("roomName", req.Room))
 		if recording := req.Recording; recording != nil {
 			s.DB().Update(app.ConferenceTableName).
 				Set(app.ConferenceIsRecordCol, false).
