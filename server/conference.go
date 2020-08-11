@@ -73,13 +73,13 @@ func (s ConferenceServer) Unlock(c *gin.Context) {
 //History 会议室历史记录
 func (s ConferenceServer) History(c *gin.Context) {
 	var param struct {
-		RoomName string `json:"room_name,omitempty"`
+		RoomName string `json:"roomName,omitempty"`
 		Range    struct {
-			StartTime db.NullTime `json:"start_time,omitempty"`
-			EndTime   db.NullTime `json:"end_time,omitempty"`
+			StartTime db.NullTime `json:"startTime,omitempty"`
+			EndTime   db.NullTime `json:"endTime,omitempty"`
 		} `json:"range,omitempty"`
 		Page    uint64 `json:"page,omitempty"`
-		PerPage uint64 `json:"per_page,omitempty"`
+		PerPage uint64 `json:"perPage,omitempty"`
 	}
 
 	if c.BindJSON(&param) != nil {
@@ -90,14 +90,14 @@ func (s ConferenceServer) History(c *gin.Context) {
 
 	selector.Conditions = append(selector.Conditions, db.Condition{
 		Col: app.CommonUidCol,
-		Cmp: "eq",
+		Cmp: db.CmpEq,
 		Val: c.GetInt64(app.UserID),
 	})
 
 	if len(param.RoomName) > 0 {
 		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: app.RoomNameCol,
-			Cmp: "eq",
+			Cmp: db.CmpEq,
 			Val: param.RoomName,
 		})
 	}
@@ -105,14 +105,14 @@ func (s ConferenceServer) History(c *gin.Context) {
 	if param.Range.StartTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: app.CommonCtimeCol,
-			Cmp: "gte",
+			Cmp: db.CmpGte,
 			Val: param.Range.StartTime,
 		})
 	}
 	if param.Range.EndTime.Valid {
 		selector.Conditions = append(selector.Conditions, db.Condition{
 			Col: app.CommonCtimeCol,
-			Cmp: "lte",
+			Cmp: db.CmpLte,
 			Val: param.Range.EndTime,
 		})
 	}

@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/gocraft/dbr/v2"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -59,17 +58,35 @@ func (s RecordServer) Delete(c *gin.Context) {
 
 // 列表查看
 func (s RecordServer) List(c *gin.Context) {
-	var param db.Pagination
+	var param struct {
+		RoomName string `json:"roomName,omitempty"`
+		Page    uint64 `json:"page,omitempty"` // start from 0
+		PerPage uint64 `json:"perPage,omitempty"`
+	}
+	//var param db.Pagination
 	if c.BindJSON(&param) != nil {
 		return
 	}
 
-	uid := c.GetInt64(app.UserID)
+	selector := db.NewSelector(s.DB())
+
+	selector.Conditions = append(selector.Conditions, db.Condition{
+		Col: app.CommonUidCol,
+		Cmp: db.CmpEq,
+		Val: c.GetInt64(app.UserID),
+	})
+
+	if len(param.RoomName) > 0 {
+		selector.Conditions = append(selector.Conditions, db.Condition{
+			Col: app.RoomNameCol,
+			Cmp: db.CmpEq,
+			Val: param.RoomName,
+		})
+	}
 
 	records := []app.RecordInfo{}
 
-	result, _ := db.NewSelector(s.DB()).From(app.RecordTableName).
-		Where(dbr.Eq(app.CommonUidCol, uid)).
+	result, _ := selector.From(app.RecordTableName).
 		Paginate(param.Page, param.PerPage).
 		OrderDesc(app.CommonIdCol).
 		LoadPage(&records)

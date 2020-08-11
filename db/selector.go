@@ -42,6 +42,12 @@ type Condition struct {
 	Escapes []string    `json:"escapes,omitempty"`
 }
 
+const (
+	CmpEq  = "eq"
+	CmpGte = "gte"
+	CmpLte = "lte"
+)
+
 func (c Condition) Build() dbr.Builder {
 	switch c.Cmp {
 	case "eq":
