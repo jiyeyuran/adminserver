@@ -206,12 +206,12 @@ div {
         overflow: hidden;
         .Aside{
             display: inline-block;
-            min-width: 240px;
+            width: 240px;
             height: 100%;
             background-color: $firstColor;
         }
         .maxBox{
-            width: 100%;
+            flex:1;
             height: 100%;
             display: flex;
             flex-direction: column;

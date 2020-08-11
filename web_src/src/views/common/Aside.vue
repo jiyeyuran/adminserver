@@ -37,16 +37,18 @@ export default {
         //   icon: "iconfont iconleft-shipinzhibo1",
         //   path: "",
         // },
-        // {
-        //   lable: "会议记录",
-        //   icon: "iconfont iconjilu",
-        //   path: "",
-        // },
-        // {
-        //   lable: "会议回看",
-        //   icon: "iconfont iconleft-luxianghuikan",
-        //   path: "",
-        // },
+        {
+          index: 3,
+          lable: "会议记录",
+          icon: "iconfont iconjilu",
+          path: "/MeetProc",
+        },
+        {
+          index: 4,
+          lable: "会议回看",
+          icon: "iconfont iconleft-luxianghuikan",
+          path: "/MeetBlack",
+        },
         // {
         //   lable: "用户管理",
         //   icon: "iconfont iconjituan1",
@@ -56,7 +58,7 @@ export default {
           index: 6,
           lable: "账户信息",
           icon: "iconfont iconcanhuirenyuan",
-          path: "/userInfo",
+          path: "/UserInfo",
         },
       ],
     };
@@ -74,7 +76,9 @@ export default {
       let paths = [
         { path: "/MeetIndex", type: 1 },
         { path: "/editMeet", type: 1 },
-        { path: "/userInfo", type: 6 },
+        { path: "/MeetProc", type: 3 },
+        { path: "/MeetBlack", type: 4 },
+        { path: "/UserInfo", type: 6 },
       ];
       for (const i in paths) {
         if (path.indexOf(paths[i].path) != -1) {

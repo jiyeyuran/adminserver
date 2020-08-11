@@ -15,6 +15,10 @@ const Player=()=>import('../views/Meet/player.vue') //会议室
 
 const UserInfo=()=>import('../views/UserInfo/index.vue') //用户信息模块
 
+const MeetBlack=()=>import('../views/MeetBlack/index.vue') //会议回看列表
+
+const MeetProc=()=>import('../views/MeetProc/index.vue') //会议记录列表
+
 const routes = [
   {
     path: '*',
@@ -53,8 +57,18 @@ const routes = [
         props: true
       },
       {
-        path: '/userInfo',
+        path: '/UserInfo',
         component: UserInfo,
+        props: true
+      },
+      {
+        path: '/MeetBlack',
+        component: MeetBlack,
+        props: true
+      },
+      {
+        path: '/MeetProc',
+        component: MeetProc,
         props: true
       },
     ]

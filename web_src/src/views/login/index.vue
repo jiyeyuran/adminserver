@@ -208,7 +208,10 @@ export default {
               this.clearCookie();
             }
             this.$router.push("/MeetIndex");
-          });
+          })
+          .catch(res=>{
+            this.getCaptchaId() 
+          })
         }
       });
     },

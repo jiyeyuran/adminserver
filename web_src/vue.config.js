@@ -43,6 +43,7 @@ module.exports = {
             //     // ws: true,//websocket支持
             //     secure: false
             // },
+            
             "/*": {
                 target: "https://vc.easyrts.com",
                 changeOrigin: true,

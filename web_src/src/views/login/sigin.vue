@@ -202,7 +202,7 @@ export default {
               this.$router.push("/MeetIndex");
             })
             .catch((res) => {
-              console.log(res);
+              this.getCaptchaId();
             });
         } else {
           console.log("没通过");
