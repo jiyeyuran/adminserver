@@ -179,7 +179,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		logger.Info("created room.", zap.String("roomName", req.Room))
 
 	case MUC_OCCUPANT_PRE_JOIN:
-		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereCommonId, req.ConferenceId).ReturnInt64()
+		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
 		if participantLimits > 0 && req.Participants >= int(participantLimits) {
 			c.AbortWithError(http.StatusServiceUnavailable, errors.New("会议室人数已达上限"))
 			return
