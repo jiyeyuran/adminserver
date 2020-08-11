@@ -38,14 +38,15 @@ type App struct {
 }
 
 type AppConfig struct {
-	Port      int         `json:"port,omitempty"`
-	Secret    string      `json:"secret,omitempty"`
-	HttpsPort int         `json:"httpsPort,omitempty"`
-	CertPath  string      `json:"certPath,omitempty"`
-	KeyPath   string      `json:"keyPath,omitempty"`
-	API       APIConfig   `json:"api,omitempty"`
-	Redis     RedisConfig `json:"redis,omitempty"`
-	DB        db.Config   `json:"db,omitempty"`
+	Port         int         `json:"port,omitempty"`
+	Secret       string      `json:"secret,omitempty"`
+	RecordingURL string      `json:"recordingUrl,omitempty"`
+	HttpsPort    int         `json:"httpsPort,omitempty"`
+	CertPath     string      `json:"certPath,omitempty"`
+	KeyPath      string      `json:"keyPath,omitempty"`
+	API          APIConfig   `json:"api,omitempty"`
+	Redis        RedisConfig `json:"redis,omitempty"`
+	DB           db.Config   `json:"db,omitempty"`
 }
 
 type APIConfig struct {

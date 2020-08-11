@@ -1,5 +1,6 @@
 port = 8004
 secret = "test"
+recordingUrl= "test"
 # httpsPort = 1443
 # certPath = "./ssl/vc.easyrts.com.crt"
 # keyPath = "./ssl/vc.easyrts.com.key"

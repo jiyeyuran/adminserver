@@ -60,8 +60,8 @@ func (s RecordServer) Delete(c *gin.Context) {
 func (s RecordServer) List(c *gin.Context) {
 	var param struct {
 		RoomName string `json:"roomName,omitempty"`
-		Page    uint64 `json:"page,omitempty"` // start from 0
-		PerPage uint64 `json:"perPage,omitempty"`
+		Page     uint64 `json:"page,omitempty"` // start from 0
+		PerPage  uint64 `json:"perPage,omitempty"`
 	}
 	//var param db.Pagination
 	if c.BindJSON(&param) != nil {
@@ -84,11 +84,16 @@ func (s RecordServer) List(c *gin.Context) {
 		})
 	}
 
-	records := []app.RecordInfo{}
+	records := []*app.RecordInfo{}
 
 	result, _ := selector.From(app.RecordTableName).
 		Paginate(param.Page, param.PerPage).
 		OrderDesc(app.CommonIdCol).
 		LoadPage(&records)
+
+	for _, record := range records {
+		record.DownloadUrl = s.Config().RecordingURL + record.DownloadUrl
+	}
+
 	c.JSON(http.StatusOK, result)
 }
