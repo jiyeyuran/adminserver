@@ -179,10 +179,9 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		logger.Info("created room.", zap.String("roomName", req.Room))
 
 	case MUC_OCCUPANT_PRE_JOIN:
-		logger.Info("pre join room.", zap.String("roomName", req.Room))
 		participantLimits, _ := s.DB().Select(app.RoomPartLimitsCol).From(app.RoomTableName).Where(app.WhereRoomName, req.Room).ReturnInt64()
+		logger.Info("pre join room.", zap.String("roomName", req.Room), zap.Int("reqLimits", req.Participants), zap.Int64("sqlLimits", participantLimits))
 		if participantLimits > 0 && req.Participants >= int(participantLimits) {
-			logger.Info("pre join room. 会议室人数已达上限", zap.String("roomName", req.Room), zap.Int64("limits", participantLimits))
 			c.AbortWithError(http.StatusServiceUnavailable, errors.New("会议室人数已达上限"))
 			return
 		}
@@ -200,7 +199,7 @@ func (s ConferenceServer) Action(c *gin.Context) {
 		// TODO: 数据库更新参会者
 
 	case MUC_ROOM_DESTROYED:
-		logger.Info("destory room.", zap.String("roomName", req.Room), zap.Reflect("time", time.Now()))
+		logger.Info("destory room.", zap.String("roomName", req.Room))
 		s.DB().Update(app.ConferenceTableName).
 			Set(app.ConferenceEtimeCol, time.Now()).
 			Set(app.ConferenceIsRecordCol, false).
