@@ -5,33 +5,49 @@
       <div class="btn_suc" @click="meetAdd">
         <i class="iconfont iconadd"></i>
         创建
-      </div> -->
-      <!-- <div class="btn_err">
+    </div>-->
+    <!-- <div class="btn_err">
         <i class="iconfont icondelete"></i>
         删除
-      </div>-->
-      <!-- <div class="inp_search">
+    </div>-->
+    <!-- <div class="inp_search">
         <input type="text" placeholder="请输入搜索内容" />
         <i class="iconfont iconsearch"></i>
       </div>
-    </div> -->
+    </div>-->
     <!-- 主体 -->
     <div class="meetIndex_body Table">
       <el-table :data="videoList" style="width: 100%" stripe>
         <el-table-column type="selection" width="55"></el-table-column>
-        <el-table-column prop="roomName" label="会议室名称" ></el-table-column>
-        <el-table-column prop="ctime" label="开始时间" ></el-table-column>
-        <el-table-column prop="duration" label="录制时长"></el-table-column>
-        <el-table-column prop="size" label="文件大小"></el-table-column>
+        <el-table-column prop="roomName" label="会议室名称"></el-table-column>
+        <el-table-column label="开始时间">
+          <template slot-scope="scope">
+            <div>{{scope.row.ctime | comverTime('YYYY-MM-DD HH:mm:ss')}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="duration" label="录制时长">
+          <template slot-scope="scope">
+            <div>{{scope.row.duration+' S'}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="size" label="文件大小">
+          <template slot-scope="scope">
+            <div>{{size(scope.row.size)}}</div>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" width="130">
           <template slot-scope="scope">
-            <!-- <span class="suc_Col operation" @click="startMeet(scope.row)">
+            <span class="suc_Col operation" @click="PlayerDlgShow(scope.row)">
               <i class="iconfont iconbofang1"></i>
-            </span> -->
+            </span>
 
-            <!-- <router-link :to="{path:'/editMeet',query:{id:scope.row.id}}" class="suc_Col operation">
+            <a
+              :href="scope.row.downloadUrl"
+              :download="downloadName(scope.row.downloadUrl)"
+              class="suc_Col operation"
+            >
               <i class="iconfont iconxiazai1"></i>
-            </router-link> -->
+            </a>
 
             <span class="del_Col operation" @click="deleVideoL(scope.row)">
               <i class="iconfont icondelete"></i>
@@ -50,17 +66,22 @@
         :total="total"
       ></el-pagination>
     </div>
+
+    <PlayerDlg :onShow="playerShow" @onHide="playerShow=false" :videoUrl="videoUrl"></PlayerDlg>
   </div>
 </template>
 <script>
-import { getVideoList,deleVideoL } from "../../request/modules/meetback";
+import { getVideoList, deleVideoL } from "../../request/modules/meetback";
+import PlayerDlg from "../common/PlayerDlg";
 export default {
   data() {
     return {
       total: 0,
       page: 1,
-			perPage: 10,
-			videoList:[]
+      perPage: 10,
+      videoList: [],
+      playerShow: false,
+      videoUrl: "",
     };
   },
   watch: {
@@ -68,20 +89,38 @@ export default {
       this.getVideoList();
     },
   },
+  components: {
+    PlayerDlg,
+  },
+  computed: {
+    size: function () {
+      return function (e) {
+        return `${(e / 1024 / 1024).toFixed(2)}M`;
+      };
+    },
+    downloadName: function () {
+      return function (e) {
+        return e.substring(e.lastIndexOf("/") + 1);
+      };
+    },
+  },
   mounted() {
     this.getVideoList();
   },
   methods: {
+    PlayerDlgShow(row) {
+      this.playerShow = true;
+      this.videoUrl = row.downloadUrl;
+    },
     // 获取录像列表
     getVideoList() {
       getVideoList({
         page: this.page - 1,
         perPage: this.perPage,
       }).then((res) => {
-				console.log(res);
+        console.log(res);
         this.total = res.count;
-				this.videoList=res.items
-				console.log(this.videoList);
+        this.videoList = res.items;
       });
     },
     // 删除录像

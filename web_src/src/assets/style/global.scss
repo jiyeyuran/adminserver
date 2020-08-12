@@ -416,6 +416,45 @@ div {
     line-height: 52px;
 }
 
+// 播放器弹框
+.container_PlayerDlg{
+    .el-dialog{
+    max-width: 750px;
+    background: none;
+    box-shadow:none;
+    .container_player{
+        position: relative;
+        video{
+            width: 100%;
+            object-fit: fill;
+            outline: none;
+            border-radius: 4px;
+        } 
+        .container_clone{
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            line-height: 20px;
+            text-align: center;
+            background-color: rgba(0,0,0,.1);
+            z-index: 10;
+            cursor: pointer;
+            i{
+                font-size: 13px;
+            }
+        }
+    }
+    .el-dialog__header{
+        padding: 0;
+    }
+    .el-dialog__body{
+        padding: 0;
+    }
+    }
+}
 
 //-----------------------------------------------------------------------
 //login登录模块样式

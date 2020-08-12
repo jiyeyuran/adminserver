@@ -21,8 +21,16 @@
         <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="roomName" label="会议室名称"></el-table-column>
         <el-table-column prop="maxParticipants" label="最大参会人数"></el-table-column>
-        <el-table-column prop="ctime" label="开始时间"></el-table-column>
-        <el-table-column prop="etime" label="结束时间"></el-table-column>
+        <el-table-column label="开始时间">
+          <template slot-scope="scope">
+            <div>{{scope.row.ctime | comverTime('YYYY-MM-DD HH:mm:ss')}}</div>
+          </template>
+        </el-table-column>
+        <el-table-column  label="结束时间">
+          <template slot-scope="scope">
+            <div>{{scope.row.etime | comverTime('YYYY-MM-DD HH:mm:ss')}}</div>
+          </template>
+        </el-table-column>
       </el-table>
     </div>
 

@@ -8,6 +8,10 @@ import Vuex from 'vuex'
 import $ from 'jquery'
 import VueClipboards from 'vue-clipboards';
 import ElementUI from 'element-ui'
+import Moment from 'moment';
+Vue.filter('comverTime',function(data,format){
+  return Moment(data).format(format);
+});
 
 Vue.config.productionTip = false
 Vue.use(ElementUI)

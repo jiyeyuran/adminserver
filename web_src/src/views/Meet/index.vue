@@ -32,7 +32,13 @@
             <span class="meetLink" @click="meetLink(scope.row)">查看</span>
           </template>
         </el-table-column>
-        <el-table-column prop="ctime" label="更新时间" width="220"></el-table-column>
+        <el-table-column  label="更新时间" width="220">
+          <template slot-scope="scope">
+            <div>
+              {{scope.row.ctime | comverTime('YYYY-MM-DD HH:mm:ss')}}
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" fixed="right" width="130">
           <template slot-scope="scope">
             <span class="suc_Col operation" @click="startMeet(scope.row)">
