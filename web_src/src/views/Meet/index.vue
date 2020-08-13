@@ -152,7 +152,7 @@ export default {
       }).then((res) => {
         this.compereToken = res.token;
         this.linkData = {
-          compereUrl: `${location.origin}/admin/meetRoom.html/#/?rn=${row.roomName}?jwt=${res.token}`,
+          compereUrl: `${location.origin}/admin/meetRoom.html/#/?rn=${row.roomName}&jwt=${res.token}`,
           commonUrl: `${location.origin}/admin/meetRoom.html/#/?rn=${row.roomName}`,
         };
         this.dialogVisible = true;
@@ -164,7 +164,7 @@ export default {
         roomName: row.roomName,
       }).then((res) => {
         this.compereToken = res.token;
-        window.open( `${location.origin}/admin/meetRoom.html/#/?rn=${row.roomName}?jwt=${res.token}`);
+        window.open( `${location.origin}/admin/meetRoom.html/#/?rn=${row.roomName}&jwt=${res.token}`);
       });
     },
     // 更新用户信息
