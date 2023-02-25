@@ -20,7 +20,6 @@ require (
 	github.com/stretchr/testify v1.4.0
 	github.com/unrolled/secure v1.0.8
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5
-	golang.org/x/text v0.3.3 // indirect
+	golang.org/x/crypto v0.1.0
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
 )
